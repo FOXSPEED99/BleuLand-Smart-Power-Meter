@@ -32,7 +32,7 @@ Any one of these is a good enough reason. None of them is urgent today.
 | Crystal | none (internal 3.579 MHz) | **8.192 MHz + 2 × 27 pF** |
 | Level shifter | Rls1/Rls2 required | **not needed** (3.3 V native) |
 | Current-channel PGA | none | **1 / 4 / 8 / 16 / 24×** |
-| Phase correction | `Cf2` capacitor, fixed per batch | **register**, per unit |
+| Phase correction | `Rf2`/`Rf3` filter trim, fixed per batch | **register**, per unit |
 | Dynamic range | ~400 : 1 (≈45 W floor) | **5000 : 1 (≈4 W floor)** |
 | Calibration | firmware constants in NVS | registers written into the chip |
 | Cost | ~US$ 0.27 | ~US$ 1.32 |
@@ -60,7 +60,7 @@ Any one of these is a good enough reason. None of them is urgent today.
 | U2 | HLW8032, SOP-8 | **ATM90E26-YU-R**, SSOP-28 (LCSC C616398 / C145595) | The metering IC |
 | Rb | 0.68 Ω | **~10 Ω** (verify) | ATM90E26's full scale is an order of magnitude higher |
 | Rv5 | 150 Ω | **~330 Ω** (verify) | Same reason |
-| Cf2 | 120 nF | **33 nF** | Phase is corrected in a register now; Cf2 goes back to matching Cf1 |
+| Rf2, Rf3 | 1.5 kΩ | **1 kΩ** | Phase is corrected in a register now, so the filter goes back to plain anti-aliasing |
 | C7, C8, FB1 | on the 5 V rail | on the **3.3 V** rail | ATM90E26 runs at 3.3 V |
 
 ### Pin assignment
@@ -110,7 +110,7 @@ v1 calibration produces firmware constants; v2 writes registers into the chip.
 |---|---|---|
 | Voltage | `k_voltage` in NVS | `Ugain` register |
 | Current | `k_current` in NVS | `Igain` register |
-| Phase | `Cf2` capacitor, fixed per batch | phase-compensation register, per unit |
+| Phase | `Rf2`/`Rf3` filter trim, fixed per batch | phase-compensation register, per unit |
 | Survives a flash wipe? | **No** — constants live in NVS | Partially — registers live in the chip |
 
 Two v2-specific gotchas:

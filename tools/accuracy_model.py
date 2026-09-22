@@ -36,7 +36,7 @@ V_CHANNEL_PCT     = 0.3    # voltage chain residual after calibration
 CHIPS = {
     "ATM90E26":                   (5000, 0.20),   # phase register, per unit
     "HLW8032 (no phase fix)":     (400,  1.50),   # CT phase uncorrected
-    "HLW8032 + 120nF phase cap":  (400,  0.50),   # hardware compensation
+    "HLW8032 + phase-trimmed filter": (400, 0.50), # Rf2/Rf3 hardware compensation
 }
 
 def core_pct(chip, pct_of_fs):

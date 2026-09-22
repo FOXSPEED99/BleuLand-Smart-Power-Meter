@@ -155,7 +155,7 @@ production run, for four reasons:
    |---|---|---|
    | ATM90E26 | 25.15 | +0.19 % |
    | HLW8032, no phase fix | 25.45 | +1.40 % |
-   | **HLW8032 + one 120 nF capacitor** | **25.22** | **+0.48 %** |
+   | **HLW8032 + phase-trimmed filter** | **25.22** | **+0.48 %** |
 
    Meanwhile the **unit-to-unit spread caused by the clamp is ±1.6 %** — larger
    than the entire gap between the chips, and identical for both because they
@@ -193,7 +193,7 @@ The ATM90E26 cancels it with a register. The HLW8032 has no registers at all —
 it only broadcasts. So we cancel it in hardware instead, by making the
 current-channel anti-alias capacitor larger than the voltage channel's, which
 makes the current signal lag by exactly enough to compensate. **One capacitor,
-`Cf2`, typically 120 nF.** Details and the tuning procedure are in
+`Rf2`/`Rf3`, typically 1.5 kΩ.** Details and the tuning procedure are in
 [`docs/02-circuit.md`](02-circuit.md) §2.5.3.
 
 ### The v1 → v2 strategy

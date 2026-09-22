@@ -17,6 +17,9 @@ schematic capture file yet — the next step is to draw this in KiCad.
 | [`docs/02-circuit.md`](docs/02-circuit.md) | Block-by-block circuit design with all component values and the maths behind them |
 | [`docs/03-bom.md`](docs/03-bom.md) | Full bill of materials: quantity per unit, role, alternatives |
 | [`hardware/bom.csv`](hardware/bom.csv) | The same BOM as a spreadsheet-ready CSV |
+| **[`hardware/purchase-list.md`](hardware/purchase-list.md)** | **What to buy** — identical parts aggregated into 40 order lines, with spares |
+| [`hardware/purchase-list.csv`](hardware/purchase-list.csv) | The same purchase list as CSV |
+| **[`docs/09-netlist.md`](docs/09-netlist.md)** | **Every net, every pin** — for schematic entry in Altium |
 | [`tools/accuracy_model.py`](tools/accuracy_model.py) | Runnable model behind the accuracy numbers — edit it with your own load profile |
 | [`docs/04-calibration-and-test.md`](docs/04-calibration-and-test.md) | Production test, calibration, jigs and the equipment to buy |
 | [`docs/05-layout-and-enclosure.md`](docs/05-layout-and-enclosure.md) | PCB layout rules, isolation/creepage, antenna, enclosure |
@@ -69,7 +72,7 @@ server over Wi-Fi.
 | Measurement range | 0 – ~78 A (sized for a 63 A main breaker with headroom) |
 | Target accuracy | **±2–3 % of reading above 200 W.** Hard floor at ~50 W — see [risks §6.4](docs/06-risks-and-decisions.md) |
 | Board size | ~50 × 45 mm, 2-layer FR4 |
-| Parts per unit | 51 placements (33 SMD, 18 through-hole) + coin cell + 1 external CT |
+| Parts per unit | 53 placements (35 SMD, 18 through-hole) + coin cell + 1 external CT |
 | Estimated unit cost @1,000 | ~US$ 13.5 including the clamp, ~US$ 9.0 without |
 
 ## Status
@@ -82,6 +85,6 @@ daily accuracy and a much worse low-load floor. Full reasoning in
 preserved for v2 in [`docs/08-v2-upgrade-path.md`](docs/08-v2-upgrade-path.md).
 
 Design complete and ready for schematic capture. Three component values (`Rb`,
-`Rv5`, `Cf2`) are marked **VERIFY ON PROTOTYPE** — see
+`Rv5`, `Rf2`/`Rf3`) are marked **VERIFY ON PROTOTYPE** — see
 [`docs/02-circuit.md`](docs/02-circuit.md) §3.3. Build 5 prototypes and lock
 these before committing to a 1,000-unit component order.

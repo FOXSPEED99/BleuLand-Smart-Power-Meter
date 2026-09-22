@@ -235,9 +235,9 @@ four pins.
 | Rb | **0.68 Ω**, 1 %, **≤ 50 ppm/°C**, 0.25 W | **Burden resistor** — converts CT secondary current to voltage. *Value to confirm — see §3.3.* |
 | Rb2 | (parallel footprint, not populated) | Range trimming during prototype bring-up. |
 | D2 | SMAJ5.0CA bidirectional TVS | Clamps the open-circuit spike and ESD on the CT leads. |
-| Rf2, Rf3 | 1 kΩ, 1 %, **matched pair** | Anti-alias / current-limit into the differential input. |
-| Cf2 | **120 nF NP0** (differential) | Anti-alias **and CT phase compensation** — see §2.5.3. Larger than the voltage channel's 33 nF on purpose. |
-| Cf3, Cf4 | 10 nF NP0 (each leg to AGND) | Common-mode filtering. |
+| Rf2, Rf3 | **1.5 kΩ**, 1 %, **matched pair** | Anti-alias, current-limit, **and CT phase compensation** — see §2.5.3. Larger than Rf1 on purpose. ⚠️ *Tune on prototype.* |
+| Cf2 | 33 nF X7R (differential) | Anti-alias. Same part as Cf1 — the phase trim lives in Rf2/Rf3, not here. |
+| Cf3, Cf4 | 10 nF X7R (each leg to AGND) | Common-mode filtering. **Note these add 5 nF to the differential path** — accounted for in §2.5.3. |
 
 ### The arithmetic
 
@@ -417,35 +417,78 @@ direction.
 A current transformer shifts the current waveform in time by roughly 1.5 degrees
 relative to the true current. At 50 Hz, **1 degree is 55.6 microseconds**. The
 ATM90E26 cancelled this with a register. The HLW8032 has no register, so we
-cancel it with **one capacitor**.
+cancel it with the **anti-alias filter that is already on the board**.
 
-The anti-alias filters already on the board (`1k + 33nF` on each channel) each
-introduce a 0.59 degree lag. Because both channels lag equally, they cancel and
-contribute no net error. To compensate the CT, make the **current** channel's
-capacitor larger so it lags *more* than the voltage channel, and tune that extra
-lag to cancel the CT's lead.
+#### The two channels are not symmetrical
+
+The voltage channel is **single-ended**: `Rf1` in series, `Cf1` to AGND.
 
 ```
-lag (degrees) = arctan( 2 x pi x f x R x C )        R = Rf2 = 1 kOhm, f = 50 Hz
+tau_V = Rf1 x Cf1 = 1 kOhm x 33 nF = 33 us   ->  lag = 0.594 deg
 ```
 
-| CT phase error | Set Cf2 to | Residual | Current-channel corner |
-|---|---|---|---|
-| 0.5 deg | 56 nF | 0.09 deg | 2,840 Hz |
-| 1.0 deg | 82 nF | 0.12 deg | 1,940 Hz |
-| **1.5 deg (typical)** | **120 nF** | **0.06 deg** | 1,330 Hz |
-| 2.0 deg | 150 nF | 0.10 deg | 1,060 Hz |
-| 2.5 deg | 180 nF | 0.14 deg | 880 Hz |
+The current channel is **differential**: `Rf2` and `Rf3` in series on each leg,
+`Cf2` across the pair, `Cf3`/`Cf4` from each leg to AGND. In differential mode
+the series resistance is `Rf2 + Rf3`, and `Cf3`/`Cf4` sit in series with each
+other, adding `Cf3 / 2` to the differential capacitance:
 
-**Start at 120 nF** and tune empirically on the prototypes — the procedure is in
-[`docs/04-calibration-and-test.md`](04-calibration-and-test.md) §4.5(c). A
-residual of 0.06 degrees costs about 0.06 % per day, which is *better* than the
-ATM90E26's calibrated 0.2 degrees.
+```
+R_eff = Rf2 + Rf3
+C_eff = Cf2 + Cf3/2 = 33 nF + 5 nF = 38 nF
+tau_I = R_eff x C_eff
+```
 
-Two caveats:
-- The larger capacitor drops the current-channel anti-alias corner from 4.8 kHz
-  to ~1.3 kHz. Fine for 50 Hz energy measurement; it softens high harmonics
-  slightly.
+> **This asymmetry is easy to miss and it matters.** With `Rf2 = Rf3 = 1 kOhm`
+> the current channel already lags 1.368 deg against the voltage channel's
+> 0.594 deg — so **+0.774 deg of compensation is built in before you tune
+> anything.**
+
+#### Tune with the resistor, not the capacitor
+
+To compensate a CT phase lead of `d` degrees, make the current channel lag by
+`0.594 + d` degrees and solve for `Rf2 = Rf3`:
+
+| CT phase error | Needed lag | Exact Rf2/Rf3 | **Use (E24)** | Residual | Current-channel corner |
+|---|---|---|---|---|---|
+| 0.0 deg | 0.59 | 434 Ω | **430 Ω** | +0.01 deg | 4,870 Hz |
+| 0.5 deg | 1.09 | 800 Ω | **820 Ω** | −0.03 deg | 2,554 Hz |
+| 1.0 deg | 1.59 | 1,165 Ω | **1.2 kΩ** | −0.05 deg | 1,745 Hz |
+| **1.5 deg (typical)** | **2.09** | **1,531 Ω** | **1.5 kΩ** | **+0.04 deg** | 1,396 Hz |
+| 2.0 deg | 2.59 | 1,897 Ω | **1.8 kΩ** | +0.13 deg | 1,163 Hz |
+| 2.5 deg | 3.09 | 2,264 Ω | **2.2 kΩ** | +0.09 deg | 952 Hz |
+| 3.0 deg | 3.59 | 2,631 Ω | **2.7 kΩ** | −0.09 deg | 776 Hz |
+
+**Start at 1.5 kΩ** and tune on the prototypes — procedure in
+[`docs/04-calibration-and-test.md`](04-calibration-and-test.md) §4.5(c).
+
+#### Why the resistor and not the capacitor
+
+1. **A 120 nF C0G/NP0 capacitor does not exist in 0805.** C0G tops out around
+   10–22 nF in that package; 120 nF C0G needs a 1210 and is rare and expensive.
+   An earlier revision of this document specified one. It was not a buildable
+   part.
+2. **Resistors are far more stable than ceramics.** A 1 % thin-film resistor at
+   100 ppm/°C holds the phase angle over temperature. An X7R capacitor is ±10 %
+   with a large temperature coefficient, which would move the compensation by
+   ±0.2–0.3 degrees in service.
+3. **Resistors exist in every E24 value**, so you can hit the target closely.
+4. **Tuning means swapping one value.** `Rf2` and `Rf3` stay a matched pair —
+   change both together, always.
+
+Because you tune empirically on real hardware, the capacitors' absolute
+tolerance barely matters: whatever `Cf2` actually is, the resistor value you land
+on absorbs it. **What matters is consistency** — buy `Cf1`–`Cf4` from one reel
+for the production run, and re-verify if you change capacitor supplier.
+
+#### Caveats
+
+- The larger resistors drop the current-channel anti-alias corner to ~1.4 kHz
+  (from 4.9 kHz). Fine for 50 Hz energy; it softens harmonics above the 28th.
+- **Do not go much above ~2.2 kΩ** without checking the HLW8032's recommended
+  source impedance. Its switched-capacitor ADC inputs draw small charging
+  pulses, and too high a series resistance causes settling errors. If your CT
+  needs more than ~2.5 degrees of correction, raise `Cf2` to 47 nF instead and
+  re-solve, keeping the resistors low.
 - This is a **fixed** correction tuned to one CT model. **Change clamp supplier,
   re-tune and re-qualify.** Write that into your purchasing rules.
 
@@ -564,7 +607,7 @@ full year.
 |---|---|---|---|
 | **Rb** | **0.68 Ω** | Current full scale (~78 A) | Drive a known current and check for clipping |
 | **Rv5** | **150 Ω** | Voltage full scale (~300 V) | Sweep mains with a variac and check for clipping |
-| **Cf2** | **120 nF** | CT phase compensation | Resistive load; tune until PF reads 1.000 (§4.5c) |
+| **Rf2, Rf3** | **1.5 kΩ** (matched pair) | CT phase compensation | Resistive load; tune until PF reads 1.000 (§4.5c) |
 
 **Why these are flagged rather than fixed.** `Rb` and `Rv5` depend on the
 HLW8032's full-scale analog input range, which its datasheet expresses in terms
@@ -572,7 +615,7 @@ of a shunt resistor and a mains divider rather than as a pin-level voltage. The
 starting values above are derived from the published shunt configurations
 (1 mΩ at 20 A → ~20 mV; 3 mΩ at 10 A → ~30 mV), which is sound reasoning but is
 *inference*, not a quoted specification. At 1,000-unit scale that is not good
-enough. `Cf2` depends on your specific CT's phase error, which varies by
+enough. `Rf2`/`Rf3` depend on your specific CT's phase error, which varies by
 supplier and cannot be known in advance at all.
 
 **What to do — half a day of work that de-risks the whole run:**
@@ -582,8 +625,8 @@ supplier and cannot be known in advance at all.
    Translate the relevant pages if needed — this is the one part of the Chinese
    datasheet you cannot skip.
 2. Recompute `Rb` and `Rv5` from the formulas in §2.3 and §2.4.
-3. Build **5 prototypes**. Fit `Rb`, `Rv5` and `Cf2` in the primary footprints and
-   leave the parallel trim footprints (`Rb2`, `Rv6`) empty.
+3. Build **5 prototypes**. Fit `Rb`, `Rv5` and `Rf2`/`Rf3` at their starting
+   values and leave the parallel trim footprints (`Rb2`, `Rv6`) empty.
 4. Using the 10-turn calibration trick from
    [`docs/04-calibration-and-test.md`](04-calibration-and-test.md) §4.5, present
    the equivalent of **70 A** to the CT and confirm the reported current is
@@ -592,8 +635,9 @@ supplier and cannot be known in advance at all.
    HLW8032's ~400:1 dynamic range makes the low end the real risk, not the top.
 6. With a variac, sweep mains from 180 V to 270 V and confirm the voltage reading
    stays linear across the range.
-7. Tune `Cf2` on a resistive load until the computed power factor reads 1.000
-   (§4.5c), then fix that value for the run.
+7. Tune `Rf2`/`Rf3` on a resistive load until the computed power factor reads
+   1.000 (§4.5c), then fix that value for the run. **Change both together — they
+   must stay matched.**
 8. **Lock all three values** and order the 1,000-unit quantity.
 
 The trim footprints stay on the production board anyway — they cost nothing and

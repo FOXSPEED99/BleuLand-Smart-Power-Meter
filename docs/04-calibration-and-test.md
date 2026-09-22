@@ -14,7 +14,7 @@ budget for one unit:
 | Error source | Typical size | Can you calibrate it out? |
 |---|---|---|
 | **CT amplitude accuracy** (`SCT-013` class) | ±1–3 % | Gain error yes, at one point. **Non-linearity, no.** |
-| **CT phase error** | 0.5–3° | Yes — but in **hardware**, via the `Cf2` capacitor (§4.5c). Fixed per batch, not per unit. |
+| **CT phase error** | 0.5–3° | Yes — but in **hardware**, via the `Rf2`/`Rf3` filter trim (§4.5c). Fixed per batch, not per unit. |
 | Burden resistor tolerance | ±1 % | Yes |
 | **Burden resistor temperature drift** | ±0.2 % over 40 °C (at 50 ppm/°C) | **No.** This is why the tempco spec matters. |
 | ZMPT101B turns-ratio tolerance | ±1 % | Yes |
@@ -161,7 +161,7 @@ load. Mark the turn count on the jig — an error here is a 10× calibration err
    clamp is non-linear or something is clipping — go back to
    [circuit §3.3](02-circuit.md).
 
-### (c) Phase compensation — tuning the `Cf2` capacitor
+### (c) Phase compensation — tuning `Rf2` / `Rf3`
 
 This is done **once for the product**, on the prototypes, not per unit. It is a
 hardware value, so you must fix it before the production run.
@@ -174,8 +174,10 @@ power factor is exactly 1.000.
    calibration.
 2. From the HLW8032 packet compute `PF = P / (V × I)`.
 3. If it reads above or below 1.000, the CT's phase error is uncorrected.
-4. Try `Cf2` values in sequence — 68 nF, 82 nF, 100 nF, 120 nF, 150 nF — until
-   PF reads 1.000 (within ±0.001).
+4. Try `Rf2` = `Rf3` in sequence — 820 Ω, 1.2 kΩ, 1.5 kΩ, 1.8 kΩ, 2.2 kΩ —
+   until PF reads 1.000 (within ±0.001). **Always change both resistors
+   together: they must stay a matched pair or the differential input loses
+   common-mode rejection.**
 5. **Lock that value for the whole production run** and record it.
 
 Skipping this costs roughly 1.4 % on the daily energy total, and about 2 % on a

@@ -57,7 +57,7 @@ you need it.
 
 | Step | Time |
 |---|---|
-| 33 SMD placements by iron | 11–13 min |
+| 35 SMD placements by iron | 11–13 min |
 | 18 THT placements | 5–6 min |
 | Inspection | 2 min |
 | **Total per board** | **~18–21 min** |

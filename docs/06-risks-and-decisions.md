@@ -26,17 +26,17 @@ What remains, and is ordinary good practice rather than a risk:
 
 ## 6.2 🔴 Three component values are not yet confirmed
 
-`Rb` (CT burden, 0.68 Ω), `Rv5` (voltage burden, 150 Ω) and `Cf2` (phase
-compensation, 120 nF) are all starting values, not final ones.
+`Rb` (CT burden, 0.68 Ω), `Rv5` (voltage burden, 150 Ω) and `Rf2`/`Rf3` (phase
+compensation, 1.5 kΩ) are all starting values, not final ones.
 
 **Why they are flagged.** `Rb` and `Rv5` depend on the HLW8032's full-scale
 analog input range, which its datasheet expresses in terms of a shunt resistor
 and a mains divider rather than as a pin-level voltage. The starting values are
 *inferred* from the published shunt configurations (1 mΩ at 20 A → ~20 mV;
 3 mΩ at 10 A → ~30 mV). That reasoning is sound but it is not a quoted
-specification, and at 1,000-unit scale inference is not good enough. `Cf2`
-depends on your specific CT's phase error, which cannot be known in advance at
-all.
+specification, and at 1,000-unit scale inference is not good enough.
+`Rf2`/`Rf3` depend on your specific CT's phase error, which cannot be known in
+advance at all.
 
 **This matters more than it did with the ATM90E26.** That chip had a
 programmable gain stage you could use to recover from a burden that turned out
@@ -288,7 +288,7 @@ that your marketing should be honest about:
 |---|---|---|---|
 | 1 | ~~ATM90E26 vs fallback~~ | **DECIDED: HLW8032 for v1**, ATM90E26 held for v2 | ✅ closed |
 | 2 | 4 MB vs 8 MB ESP32 module | **8 MB (N8)** | Before ordering modules |
-| 3 | Final `Rb`, `Rv5` and `Cf2` values | Verify and tune on 5 prototypes | Before the 1,000-unit component order |
+| 3 | Final `Rb`, `Rv5`, `Rf2`/`Rf3` values | Verify and tune on 5 prototypes | Before the 1,000-unit component order |
 | 4 | 3D-printed vs off-the-shelf enclosure | Printed (PETG/ABS) for pilot, V-0 box for volume | Before pilot batch ships |
 | 5 | Buy a stencil + hotplate? | **Yes** — see [§7.3](07-assembly-and-tooling.md) | Before volume assembly |
 | 6 | Cloud backend and data model | Out of scope here; the board is agnostic | Phase 2 |

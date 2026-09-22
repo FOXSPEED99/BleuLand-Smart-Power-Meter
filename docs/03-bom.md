@@ -1,6 +1,6 @@
 # 3. Bill of Materials
 
-**Per unit (v1 / HLW8032).** 33 SMD placements + 18 through-hole placements +
+**Per unit (v1 / HLW8032).** 35 SMD placements + 18 through-hole placements +
 1 coin cell, plus 1 external current clamp.
 
 > **v1 uses the HLW8032.** The ATM90E26 parts it replaced are documented in
@@ -36,6 +36,7 @@ A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 | Ref | Qty | Part | Package | Role | Alternatives |
 |---|---|---|---|---|---|
 | **C2** | 1 | 470 µF / 16 V electrolytic, 105 °C | THT radial | 5 V bulk reservoir; absorbs Wi-Fi transmit bursts. | 330–1000 µF. Use a 105 °C part — it lives in a hot panel. |
+| **C3** | 1 | 100 nF X7R, 50 V | 0805 | 5 V decoupling at the LDO input. | — |
 | **U1** | 1 | AMS1117-3.3 | SOT-223 | 5 V → 3.3 V linear regulator. | LM1117-3.3, AP1117-33, RT9013 (SOT-23, lower current), SPX1117-3.3. |
 | **D1** | 1 | 1N4148W | SOD-123 | Protects U1 if a programmer back-feeds 3.3 V into an unpowered board. | SS14, BAT54, 1N4007 (THT). |
 | **C4** | 1 | 470 µF / 10 V electrolytic, 105 °C | THT radial | 3.3 V bulk. **Place within 10 mm of the ESP32's 3V3 pin.** Do not reduce — this is what prevents brown-out resets during Wi-Fi TX. | 470–1000 µF, low ESR preferred. |
@@ -58,10 +59,11 @@ A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 | **Rb2** | 0 | (parallel trim footprint) | 0805 | Empty. Lets you trim the current range without cutting traces, and lets you build a 100 A variant later. | — |
 | **Rv5** | 1 | **150 Ω, 1 %, ≤ 50 ppm/°C** | 0805 | Secondary burden for T1 — sets voltage full scale (~300 V). ⚠️ *Value to confirm on prototype.* | 62–330 Ω depending on the chip's real full scale. See [circuit §2.3](02-circuit.md). |
 | **Rv6** | 0 | (parallel trim footprint) | 0805 | Empty. Voltage-range trimming. | — |
-| **Rf1, Rf2, Rf3** | 3 | 1 kΩ, 1 % | 0805 | Anti-alias / input current limiting. **Rf2 and Rf3 must be a matched pair** — mismatch degrades common-mode rejection on the current channel. | 470 Ω–2.2 kΩ, adjust Cf to keep the corner near 5 kHz. |
-| **Cf1** | 1 | 33 nF, NP0/C0G | 0805 | Voltage-channel anti-alias, corner ≈ 4.8 kHz. Gives a 0.59° lag. | 22–47 nF NP0. |
-| **Cf2** | 1 | **120 nF, NP0/C0G** | 0805 | Current-channel anti-alias **and CT phase compensation**. Deliberately larger than Cf1 so the current channel lags more, cancelling the CT's phase lead. ⚠️ *Tune on prototype — see [circuit §2.5.3](02-circuit.md).* | 56–180 nF depending on your CT's measured phase error. **Re-tune if you change clamp supplier.** |
-| **Cf3, Cf4** | 2 | 10 nF, NP0/C0G | 0805 | Common-mode filtering on the CT legs. | — |
+| **Rf1** | 1 | 1 kΩ, 1 % | 0805 | Voltage-channel anti-alias, corner ≈ 4.8 kHz, 0.59° lag. | 470 Ω–2.2 kΩ. |
+| **Rf2, Rf3** | 2 | **1.5 kΩ, 1 %, matched pair** | 0805 | Current-channel anti-alias **and CT phase compensation** — deliberately larger than Rf1 so the current channel lags more, cancelling the CT's phase lead. ⚠️ *Tune on prototype — see [circuit §2.5.3](02-circuit.md).* | 820 Ω – 2.2 kΩ per your CT's measured phase error. **Always change both together.** Do not exceed ~2.2 kΩ without checking the chip's source-impedance limit. |
+| **Cf1** | 1 | 33 nF X7R, 50 V | 0805 | Voltage-channel anti-alias, corner ≈ 4.8 kHz, 0.59° lag. | 22–47 nF. C0G is nicer but 33 nF C0G is not reliably available in 0805. |
+| **Cf2** | 1 | 33 nF X7R, 50 V | 0805 | Current-channel differential anti-alias. Same part as Cf1 — the phase trim lives in `Rf2`/`Rf3`, not here. | Buy Cf1–Cf4 from one reel; consistency matters more than absolute value because the phase is trimmed with the resistor. |
+| **Cf3, Cf4** | 2 | 10 nF X7R, 50 V | 0805 | Common-mode filtering on the CT legs. **These add 5 nF to the differential path** — accounted for in the phase maths. | C0G available at this value if you prefer. |
 | **D2, D3** | 2 | SMAJ5.0CA — bidirectional TVS, 5 V | DO-214AC | Clamps the CT open-circuit spike, ESD and transformer-coupled transients. | P6KE6.8CA, SMBJ5.0CA, or two 3.9 V zeners back-to-back. **Must be bidirectional** — the signal is AC. |
 | **J2** | 1 | Screw terminal, 2-pin, **3.5 mm** | THT | CT clamp connection. Deliberately a different pitch from J1 so mains can never be wired here by mistake. | 3.81 mm block, or a PJ-320 3.5 mm jack if you want plug-in clamps. |
 | **CT1** | 1 | **Split-core CT, 100 A : 50 mA (2000:1), 13 mm window** — `SCT-013-000` | External | Non-invasive current sensing. Clamps around the house main live conductor. | Any 2000:1 split-core 100 A clamp (many clones). `SCT-013-060` (60 A : 1 V, internal burden) is safer but caps out below your 63 A breaker and needs a different input network. **This is your biggest single cost — source it carefully.** |
@@ -85,6 +87,7 @@ A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 | **B1** | 1 | CR2032 lithium cell | — | ~8 years of backup timekeeping. | ⚠️ **Non-rechargeable.** Connect straight to VBAT — no trickle-charge circuit. See [circuit §2.7](02-circuit.md). |
 | **R5, R6** | 2 | 4.7 kΩ | 0805 | I²C pull-ups. | 2.2–10 kΩ. |
 | **C13** | 1 | 100 nF X7R | 0805 | DS3231 decoupling. | — |
+| **R7** | 1 | **0 Ω jumper** | 0805 | **AGND ↔ GND single-point star link.** Keeps ESP32 return currents out of the analog ground. Place it directly under the metering IC. | Altium `NetTie` component if you prefer — see [netlist §9.4](09-netlist.md). |
 | **J3** | 1 | Header, 1 × 6, 2.54 mm | THT | Programming and debug: `3V3 · GND · TXD0 · RXD0 · EN · IO0`. | Or leave as bare pads for a pogo-pin jig — cheaper and faster in production. |
 | **U5** | **0** | W25Q64 — 8 MB SPI flash | SOIC-8 | **Not populated.** Footprint only, for a future high-resolution logging variant. | Populate only if you need 15-second data kept for a year. |
 

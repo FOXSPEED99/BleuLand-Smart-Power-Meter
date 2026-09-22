@@ -1,7 +1,10 @@
 # 3. Bill of Materials
 
-**Per unit.** 34 SMD placements + 19 through-hole placements + 1 coin cell,
-plus 1 external current clamp.
+**Per unit (v1 / HLW8032).** 33 SMD placements + 18 through-hole placements +
+1 coin cell, plus 1 external current clamp.
+
+> **v1 uses the HLW8032.** The ATM90E26 parts it replaced are documented in
+> [`docs/08-v2-upgrade-path.md`](08-v2-upgrade-path.md).
 
 A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 
@@ -45,18 +48,19 @@ A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 
 | Ref | Qty | Part | Package | Role | Alternatives |
 |---|---|---|---|---|---|
-| **U2** | 1 | **ATM90E26-YU-R** — single-phase metering IC | **SSOP-28, 0.65 mm** | The measurement engine: Vrms, Irms, real/reactive/apparent power, PF, frequency, energy accumulation, phase compensation. | LCSC **C616398** (reel) / **C145595** (`-YU-B`). ⚠️ **Stock is thin — see [risks §6.1](06-risks-and-decisions.md).** Plan B: `BL0940` (TSSOP-14, LCSC C691894) or `HLW8032` (SOP-8, LCSC C128023) — both need a different footprint, so decide before the PCB order. |
-| **Y1** | 1 | Crystal, **8.192 MHz**, 18 pF load | HC-49S THT (or 3225 SMD) | Metering timebase. The frequency is not negotiable — the IC's energy constants assume it. | HC-49S through-hole is easier to hand-solder and more available locally. SMD 3225 if you move to reflow. |
-| **C10, C11** | 2 | 27 pF, **NP0/C0G**, 50 V | 0805 | Crystal load caps: `2 × 18 − 2 × 5 = 26 pF → 27 pF`. | 22–33 pF NP0. Must be NP0/C0G — X7R drifts and pulls the oscillator. |
-| **FB1** | 1 | Ferrite bead, 600 Ω @ 100 MHz | 0805 | Keeps Wi-Fi and digital switching noise out of the analog supply. | 120–1000 Ω @ 100 MHz, ≥ 200 mA rating. |
-| **C7** | 1 | 10 µF X7R | 0805 | Analog supply bulk (AVDD). | 4.7–22 µF. |
-| **C8, C9** | 2 | 100 nF X7R | 0805 | AVDD / DVDD decoupling. Place hard against the pins. | — |
-| **Rb** | 1 | **10 Ω, 1 %, ≤ 50 ppm/°C**, 0.25 W metal/thin film | 0805 or 1206 | **Burden resistor.** Converts CT secondary current to voltage. The single most accuracy-critical passive on the board. ⚠️ *Value to confirm on prototype — see [circuit §3.3](02-circuit.md).* | 12 Ω is the published reference value with this clamp. **Never** substitute a wirewound part (inductance causes phase error) or a >50 ppm/°C part (uncalibratable drift). |
+| **U2** | 1 | **HLW8032** — single-phase metering IC | **SOP-8, 1.27 mm** | The measurement engine: Vrms, Irms, active/apparent power, PF, energy pulse counter. Broadcasts a 24-byte packet at 4800 baud; **no writable registers**. | LCSC **C128023**, ~US$ 0.27, ~32,000 in stock. Runs on **5 V** with an internal 3.579 MHz oscillator — no crystal. Upgrade path: `ATM90E26-YU-R` (see [§8](08-v2-upgrade-path.md)). |
+| **Rls1** | 1 | 1 kΩ, 1 % | 0805 | Level shifter, series element. **The HLW8032's TX idles at 5 V and ESP32 GPIOs are not 5 V tolerant.** | 1–10 kΩ, keeping the 1:2 ratio with Rls2. |
+| **Rls2** | 1 | 2 kΩ, 1 % | 0805 | Level shifter, shunt element. `5 V × 2k/(1k+2k) = 3.33 V`. | 2–20 kΩ, ratio as above. |
+| **FB1** | 1 | Ferrite bead, 600 Ω @ 100 MHz | 0805 | Keeps Wi-Fi and digital switching noise off the metering IC's **5 V** supply. | 120–1000 Ω @ 100 MHz, ≥ 200 mA rating. |
+| **C7** | 1 | 10 µF X7R | 0805 | Metering IC supply bulk (5 V rail). | 4.7–22 µF. |
+| **C8** | 1 | 100 nF X7R | 0805 | Metering IC decoupling. Place hard against the pin. | — |
+| **Rb** | 1 | **0.68 Ω, 1 %, ≤ 50 ppm/°C**, 0.25 W metal/thin film | 0805 or 1206 | **Burden resistor.** Converts CT secondary current to voltage. The single most accuracy-critical passive on the board. The HLW8032's ~20–30 mV full scale is why this is so much lower than a typical CT burden. ⚠️ *Value to confirm on prototype — see [circuit §3.3](02-circuit.md).* | 0.51–0.77 Ω depending on the chip's real full scale. **Never** substitute a wirewound part (inductance causes phase error) or a >50 ppm/°C part (uncalibratable drift). **There is no programmable gain to fall back on.** |
 | **Rb2** | 0 | (parallel trim footprint) | 0805 | Empty. Lets you trim the current range without cutting traces, and lets you build a 100 A variant later. | — |
-| **Rv5** | 1 | **330 Ω, 1 %, ≤ 50 ppm/°C** | 0805 | Secondary burden for T1 — sets voltage full scale (~300 V). ⚠️ *Value to confirm on prototype.* | 62 Ω if the IC's full scale turns out to be ~120 mV. See [circuit §2.3](02-circuit.md). |
+| **Rv5** | 1 | **150 Ω, 1 %, ≤ 50 ppm/°C** | 0805 | Secondary burden for T1 — sets voltage full scale (~300 V). ⚠️ *Value to confirm on prototype.* | 62–330 Ω depending on the chip's real full scale. See [circuit §2.3](02-circuit.md). |
 | **Rv6** | 0 | (parallel trim footprint) | 0805 | Empty. Voltage-range trimming. | — |
 | **Rf1, Rf2, Rf3** | 3 | 1 kΩ, 1 % | 0805 | Anti-alias / input current limiting. **Rf2 and Rf3 must be a matched pair** — mismatch degrades common-mode rejection on the current channel. | 470 Ω–2.2 kΩ, adjust Cf to keep the corner near 5 kHz. |
-| **Cf1, Cf2** | 2 | 33 nF, NP0/C0G | 0805 | Anti-alias filter, corner ≈ 4.8 kHz. | 22–47 nF NP0. |
+| **Cf1** | 1 | 33 nF, NP0/C0G | 0805 | Voltage-channel anti-alias, corner ≈ 4.8 kHz. Gives a 0.59° lag. | 22–47 nF NP0. |
+| **Cf2** | 1 | **120 nF, NP0/C0G** | 0805 | Current-channel anti-alias **and CT phase compensation**. Deliberately larger than Cf1 so the current channel lags more, cancelling the CT's phase lead. ⚠️ *Tune on prototype — see [circuit §2.5.3](02-circuit.md).* | 56–180 nF depending on your CT's measured phase error. **Re-tune if you change clamp supplier.** |
 | **Cf3, Cf4** | 2 | 10 nF, NP0/C0G | 0805 | Common-mode filtering on the CT legs. | — |
 | **D2, D3** | 2 | SMAJ5.0CA — bidirectional TVS, 5 V | DO-214AC | Clamps the CT open-circuit spike, ESD and transformer-coupled transients. | P6KE6.8CA, SMBJ5.0CA, or two 3.9 V zeners back-to-back. **Must be bidirectional** — the signal is AC. |
 | **J2** | 1 | Screw terminal, 2-pin, **3.5 mm** | THT | CT clamp connection. Deliberately a different pitch from J1 so mains can never be wired here by mistake. | 3.81 mm block, or a PJ-320 3.5 mm jack if you want plug-in clamps. |
@@ -94,7 +98,7 @@ A spreadsheet-ready version is at [`hardware/bom.csv`](../hardware/bom.csv).
 | Size | ~50 × 45 mm |
 | Thickness | 1.6 mm |
 | Copper | 1 oz (35 µm) |
-| Surface finish | **ENIG recommended** (flat pads make the SSOP-28 far easier to hand-solder). HASL is acceptable and cheaper. |
+| Surface finish | **HASL is fine for v1** — no fine-pitch parts remain. ENIG is nicer to solder and worth it if you move to the v2 ATM90E26. |
 | Special | **Routed slot** along the isolation barrier — see [layout §5.2](05-layout-and-enclosure.md) |
 | Silkscreen | Mains area clearly marked, dashed isolation line, polarity marks on every polarised part |
 
@@ -108,7 +112,7 @@ will differ — treat this as the import-fallback ceiling.
 | Item | Unit cost (USD) |
 |---|---|
 | ESP32-WROOM-32E-N8 | 2.50 |
-| ATM90E26-YU-R | 1.32 |
+| HLW8032 | 0.27 |
 | HLK-PM01 | 1.80 |
 | DS3231SN | 1.50 |
 | ZMPT101B | 0.90 |
@@ -116,7 +120,6 @@ will differ — treat this as the import-fallback ceiling.
 | Fuse + clips + MOV + X2 cap | 0.35 |
 | 2 × TVS | 0.12 |
 | CR2032 + holder | 0.20 |
-| Crystal | 0.10 |
 | AMS1117 + diode | 0.08 |
 | Rv1–Rv4 metal film | 0.08 |
 | ~25 × 0805 passives | 0.25 |
@@ -124,11 +127,11 @@ will differ — treat this as the import-fallback ceiling.
 | Switch, LEDs, header | 0.15 |
 | Ferrite bead | 0.02 |
 | PCB (2-layer, qty 1,000) | 0.35 |
-| **Subtotal — board only** | **≈ 10.10** |
+| **Subtotal — board only** | **≈ 8.97** |
 | **CT clamp (`SCT-013-000`)** | **4.50** (generic clone ≈ 2.50) |
-| **Total per unit** | **≈ 14.60** (≈ 12.60 with a clone clamp) |
+| **Total per unit** | **≈ 13.47** (≈ 11.47 with a clone clamp) |
 
-**Note where the money is.** The clamp alone is ~31 % of the bill of materials —
+**Note where the money is.** The clamp alone is ~33 % of the bill of materials —
 more than the ESP32 and the metering IC combined. If you need to cut cost, that
 is the place to negotiate, and if you need to *improve accuracy*, that is also
 the place to spend. See [risks §6.3](06-risks-and-decisions.md).

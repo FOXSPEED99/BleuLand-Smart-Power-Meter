@@ -14,19 +14,21 @@ budget for one unit:
 | Error source | Typical size | Can you calibrate it out? |
 |---|---|---|
 | **CT amplitude accuracy** (`SCT-013` class) | ±1–3 % | Gain error yes, at one point. **Non-linearity, no.** |
-| **CT phase error** | 0.5–3° | Yes — ATM90E26 phase-compensation register |
+| **CT phase error** | 0.5–3° | Yes — but in **hardware**, via the `Cf2` capacitor (§4.5c). Fixed per batch, not per unit. |
 | Burden resistor tolerance | ±1 % | Yes |
 | **Burden resistor temperature drift** | ±0.2 % over 40 °C (at 50 ppm/°C) | **No.** This is why the tempco spec matters. |
 | ZMPT101B turns-ratio tolerance | ±1 % | Yes |
 | ZMPT101B phase shift | 1–2° | Yes |
 | Rv1–Rv4 combined tolerance | ±0.5 % | Yes |
-| ATM90E26 itself | ±0.1 % | Not needed |
-| **Realistic total after per-unit calibration** | **±1 % above 10 % of range** | |
+| HLW8032 metering core | ±0.5 % above 10 % of range, **±3 % below 2 %** | No — this is the chip's dynamic-range limit |
+| **Realistic total after per-unit calibration** | **±2–3 % above 200 W; unreliable below ~50 W** | |
 
 Two conclusions fall straight out of this table:
 
-1. **The clamp dominates.** A 0.1 %-class metering IC behind a ±3 % clamp gives
-   you a ±3 % product. Spend your accuracy budget on the CT, not the IC.
+1. **The clamp dominates.** A better metering IC behind a ±3 % clamp still gives
+   you a ±3 % product. Spend your accuracy budget on the CT, not the IC. This is
+   exactly why the cheaper, easier-to-solder HLW8032 was the right call for v1 —
+   see [`docs/01-architecture.md`](01-architecture.md) §1.4.
 2. **Per-unit calibration is not optional.** Without it you are stacking ±1 % CT,
    ±1 % burden, ±1 % transformer and ±0.5 % resistors — worst case around ±3.5 %
    before the customer even switches a light on.
@@ -74,8 +76,9 @@ at a normal bench with a USB cable.
 
    | Check | Proves |
    |---|---|
-   | Read ATM90E26 SysStatus + a known-value register | SPI wiring, IC alive, **crystal oscillating** |
-   | Write then read back a scratch register | Bidirectional SPI |
+   | A valid 24-byte HLW8032 packet arrives on UART2 within 1 s | Metering IC alive, level shifter correct, UART wiring |
+   | Its **checksum validates** | Clean signal path, no noise corruption |
+   | Reported Vrms is 0 (no mains yet) but the packet is well-formed | Voltage channel wired, not shorted |
    | DS3231 responds at I²C address 0x68, time is sane | RTC + pull-ups |
    | DS3231 "oscillator stopped" flag | Coin cell is fitted and good |
    | Mount the data partition, write and read a record | Flash partition |
@@ -108,15 +111,22 @@ at a normal bench with a USB cable.
 
 Four things get calibrated per unit, in this order.
 
-### (a) Voltage gain
+> **Everything here is a firmware constant, not a chip register.** The HLW8032
+> cannot be written to — it only broadcasts. So calibration means computing a
+> scale factor in the ESP32 and storing it in NVS. This is simpler than register
+> calibration, but it means a board with a wiped flash is an *uncalibrated*
+> board. Back the constants up to your server (§4.5e).
+
+### (a) Voltage scale factor
 
 1. Apply mains. Measure the true voltage with your reference DMM at the terminal
    block.
-2. Read the device's `Vrms`.
+2. Read the raw voltage value from the HLW8032 packet.
 3. ```
-   Ugain_new = Ugain_current × (V_reference / V_device)
+   k_voltage = V_reference / V_raw
    ```
-4. Write `Ugain`, re-read, confirm within ±0.3 %.
+4. Store `k_voltage` in NVS. Re-read and confirm the reported voltage is within
+   ±0.3 % of the reference.
 
 ### (b) Current gain — and the trick that makes this practical
 
@@ -141,26 +151,41 @@ load. Mark the turn count on the jig — an error here is a 10× calibration err
    of the cable.
 3. Effective current at the CT = measured × 10.
 4. ```
-   Igain_new = Igain_current × (I_effective / I_device)
+   k_current = I_effective / I_raw
    ```
+   Store `k_current` in NVS. Derive the power scale factor the same way from a
+   known power reading rather than assuming `k_power = k_voltage × k_current` —
+   the chip's power path has its own scaling.
 5. Verify linearity with a second point (e.g. 0.5 A → 5 A effective and 2 A →
    20 A effective). The two points should agree within 1 %. If they do not, the
    clamp is non-linear or something is clipping — go back to
    [circuit §3.3](02-circuit.md).
 
-### (c) Phase compensation
+### (c) Phase compensation — tuning the `Cf2` capacitor
 
-With a **purely resistive** load (incandescent lamps or a heater — *not* an LED
-lamp or a switch-mode supply, which are non-linear), the true power factor is
-1.000.
+This is done **once for the product**, on the prototypes, not per unit. It is a
+hardware value, so you must fix it before the production run.
 
-1. Read the device's power factor.
-2. Adjust the ATM90E26's phase-compensation register until PF ≥ 0.999.
-3. Do this at the same current used for gain calibration.
+With a **purely resistive** load (incandescent lamps or a heater — *not* LED
+lamps or anything with a switch-mode supply, which are non-linear), the true
+power factor is exactly 1.000.
 
-This corrects the combined phase error of the CT and the ZMPT101B. Skipping it
-costs you roughly 1.4 % error on a PF-0.8 motor load for every 1° of uncorrected
-phase shift — and Syrian homes are full of motors.
+1. Put the resistive load on, at roughly the same current used for gain
+   calibration.
+2. From the HLW8032 packet compute `PF = P / (V × I)`.
+3. If it reads above or below 1.000, the CT's phase error is uncorrected.
+4. Try `Cf2` values in sequence — 68 nF, 82 nF, 100 nF, 120 nF, 150 nF — until
+   PF reads 1.000 (within ±0.001).
+5. **Lock that value for the whole production run** and record it.
+
+Skipping this costs roughly 1.4 % on the daily energy total, and about 2 % on a
+PF-0.8 motor load — and Syrian homes are full of motors. One capacitor recovers
+almost all of it. The theory is in [`docs/02-circuit.md`](02-circuit.md) §2.5.3.
+
+> ⚠️ **This is tuned to one CT model.** If you change clamp supplier or the
+> supplier changes their core, re-run this procedure and re-qualify. Write that
+> into your purchasing rules, because a silent CT substitution would shift every
+> unit's accuracy with no other visible symptom.
 
 ### (d) No-load threshold — the one that protects your billing
 
@@ -184,12 +209,16 @@ With the CT connected but clamped around nothing, the device should report
   ESP32's NVS, keyed to the module's MAC address.
 - **Also upload them to your server.** If a board's flash is ever erased, or you
   replace a unit, you can re-provision it without repeating the calibration.
-- ⚠️ **Checksum registers.** The ATM90E26 maintains checksum registers over its
-  calibration register banks and raises an error flag if they do not match what
-  you wrote. After writing calibration values you must recompute and write those
-  checksums. Check the exact register names and the checksum algorithm in the
-  datasheet before writing firmware — a unit that silently refuses to meter
-  because of a checksum mismatch is a very confusing bug to find at unit 400.
+- ⚠️ **Validate the HLW8032's packet checksum on every frame, without
+  exception.** At 4800 baud inside an electrically noisy distribution panel you
+  *will* receive corrupted frames. A corrupted power value that passes into your
+  energy accumulator silently poisons the customer's monthly total, and you will
+  never find it afterwards. Discard bad frames and wait — a fresh one arrives
+  roughly every 50 ms, so dropping them costs nothing.
+- ⚠️ **A wiped flash means an uncalibrated board.** Unlike register-based
+  calibration, nothing is stored in the metering chip. Treat the server-side
+  backup of `k_voltage`, `k_current`, `k_power` and the no-load threshold as
+  mandatory, not optional.
 
 ---
 
@@ -257,7 +286,7 @@ cheapest quality insurance you will ever buy.
 | **Isolation transformer, 300–500 VA** | Protects your technicians and your equipment during every mains-powered test. | US$ 40 |
 | **Variac (autotransformer)** | Sweep 180–270 V to verify the voltage channel does not clip and the PSU holds up during brownouts. | US$ 60 |
 | **RCD / GFCI for the bench** | Last-line protection for people. | US$ 10 |
-| Inspection microscope or USB camera | Checking the SSOP-28 joints. Also listed in [tooling §7.3](07-assembly-and-tooling.md). | US$ 40 |
+| Inspection microscope or USB camera | General joint inspection. Less critical for v1 than it was with the ATM90E26, but still the fastest way to catch a bridge. Also in [tooling §7.4](07-assembly-and-tooling.md). | US$ 40 |
 
 ---
 

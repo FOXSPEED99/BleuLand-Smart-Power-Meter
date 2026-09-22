@@ -4,65 +4,71 @@ Ordered roughly by how likely they are to actually cause you a problem.
 
 ---
 
-## 6.1 🔴 The ATM90E26 supply is thin — act on this before you order PCBs
+## 6.1 🟢 Metering IC supply — resolved by the v1 chip choice
 
-**The risk.** At the time of writing, LCSC listed roughly **200–230 pieces of
-`ATM90E26-YU-R` at about US$ 1.32**. You need 1,000. That is a single order away
-from stopping your production line, and this part has no drop-in replacement —
-nothing else on the market shares its SSOP-28 pinout.
+**This was the biggest risk in the original design and it is now closed.**
 
-**What to do, in order:**
+The ATM90E26 had roughly 200–230 pieces in stock at LCSC against a 1,000-unit
+need, with no drop-in replacement. Moving v1 to the **HLW8032** (~32,000 in
+stock, ~US$ 0.27) removes that exposure entirely.
 
-1. **Check live stock before you commit to a PCB layout.** Not after.
-2. **Buy the full 1,000 (plus 5 % spares) up front**, across multiple
-   distributors if necessary — LCSC, Arrow, and Chinese brokers all list it.
-   At US$ 1.32 that is about US$ 1,400. Committing that early is far cheaper than
-   a stalled line and idle assemblers.
-3. Order `ATM90E26-YU-B` (LCSC **C145595**) as well as `-YU-R` — same die, same
-   SSOP-28 package, different packing (tube vs reel). Treat them as
-   interchangeable, but **verify the package on the product page** before paying.
-4. **Decide your Plan B now, not later.** If you cannot secure 1,000 pieces,
-   switch to `BL0940` (TSSOP-14, LCSC **C691894**, ~US$ 0.36, thousands in stock)
-   or `HLW8032` (SOP-8, LCSC **C128023**, ~US$ 0.27, ~32,000 in stock). Both are
-   hand-solderable. Both cost you some accuracy, some documentation quality
-   (largely Chinese datasheets), and finer phase-calibration control.
-   **Critically: they need a different footprint**, so this decision must be made
-   *before* the PCB is finalised.
-5. If you want maximum insurance, draw **two board variants** from the same
-   schematic — one with the ATM90E26 footprint, one with the BL0940 footprint —
-   and order a small quantity of each. Bare PCBs are the cheapest thing in this
-   project.
+What remains, and is ordinary good practice rather than a risk:
+
+1. **Still buy the full 1,000 plus 5 % spares up front.** At US$ 0.27 that is
+   about US$ 285. Stock levels are a snapshot, not a promise.
+2. `CSE7766` (SOP-8) is a functionally similar fallback if Hiliwei supply ever
+   becomes a problem — verify the pinout before assuming footprint
+   compatibility.
+3. When you plan v2, **re-check ATM90E26 stock before committing to a layout**.
+   The constraint that pushed you off it may or may not still apply.
 
 ---
 
-## 6.2 🔴 Two component values are not yet confirmed
+## 6.2 🔴 Three component values are not yet confirmed
 
-`Rb` (CT burden, starting value 10 Ω) and `Rv5` (voltage burden, starting value
-330 Ω) both depend on the ATM90E26's full-scale analog input range, which I could
-not confirm from the datasheet with enough certainty to fix at 1,000-unit scale.
+`Rb` (CT burden, 0.68 Ω), `Rv5` (voltage burden, 150 Ω) and `Cf2` (phase
+compensation, 120 nF) are all starting values, not final ones.
 
-Published reference designs using the same `SCT-013-000` clamp use a **12 Ω**
-burden, which is consistent with the starting values above — but "consistent
-with" is not "verified".
+**Why they are flagged.** `Rb` and `Rv5` depend on the HLW8032's full-scale
+analog input range, which its datasheet expresses in terms of a shunt resistor
+and a mains divider rather than as a pin-level voltage. The starting values are
+*inferred* from the published shunt configurations (1 mΩ at 20 A → ~20 mV;
+3 mΩ at 10 A → ~30 mV). That reasoning is sound but it is not a quoted
+specification, and at 1,000-unit scale inference is not good enough. `Cf2`
+depends on your specific CT's phase error, which cannot be known in advance at
+all.
 
-**Do not order 1,000 of either resistor until you have built 5 prototypes and run
-the verification in [circuit §3.3](02-circuit.md).** The parallel trim footprints
-(`Rb2`, `Rv6`) exist precisely so this costs you half a day rather than a
-respin.
+**This matters more than it did with the ATM90E26.** That chip had a
+programmable gain stage you could use to recover from a burden that turned out
+too small. **The HLW8032 has no programmable gain.** What the burden gives the
+chip is what the chip gets, in both directions:
+
+- Burden too large → a 60 A load clips, silently and unfixably.
+- Burden too small → every reading is noisier and the low-load floor gets worse,
+  also unfixably.
+
+**Do not order 1,000 of any of the three until you have built 5 prototypes and
+run the verification in [`docs/02-circuit.md`](02-circuit.md) §3.3.** The
+parallel trim footprints (`Rb2`, `Rv6`) exist so this costs half a day rather
+than a respin.
 
 ---
 
 ## 6.3 🟠 The current clamp sets your accuracy, not the metering IC
 
 A `SCT-013-000`-class clamp is roughly **±1–2 % above 10 % of its range and
-±3 % or worse below that**. Putting a 0.1 %-class metering IC behind it does not
-make the system 0.1 % accurate — it makes it clamp-accurate.
+±3 % or worse below that**. Putting a better metering IC behind it does not make
+the system better — it makes it clamp-accurate.
+
+This is the single fact that justified choosing the cheaper, easier HLW8032 for
+v1: the **unit-to-unit spread from the clamp (±1.6 %) is larger than the entire
+accuracy gap between the two chips (1.2 %)**, and the clamp is common to both.
 
 **Implications:**
 - If a customer disputes their reading, the clamp is almost always the cause.
 - If you want to improve accuracy, **spend the money on a better CT**, not a
   better IC. A 0.5 %-class clamp costs more but moves the whole product.
-- The clamp is also ~31 % of your BOM cost. It deserves the most supplier
+- The clamp is also ~33 % of your BOM cost. It deserves the most supplier
   attention of anything in the design: buy samples from three suppliers, measure
   their actual turns ratio and linearity against each other, and then commit.
 - **Re-verify your golden units whenever you change clamp supplier or batch.**
@@ -72,9 +78,20 @@ make the system 0.1 % accurate — it makes it clamp-accurate.
 ## 6.4 🟠 Low-load accuracy, and phantom consumption
 
 With the CT sized for ~78 A full scale, a 50 W standby load draws about 0.22 A —
-**0.28 % of full scale**. It is measurable, but noisy.
+**0.28 % of full scale**.
 
-- Specify your product honestly: **accurate above ~50 W**.
+> ⚠️ **This got worse with the v1 chip choice, and it is the real cost of that
+> decision.** The HLW8032's dynamic range is about **400:1** against the
+> ATM90E26's 5000:1. At 78 A full scale that puts the smallest reliable load at
+> roughly **45 W**, not 4 W. A house spends most of the night between 200 and
+> 400 W — only 5–9× above the floor — so night-time readings will be the
+> noisiest part of your data.
+
+- Specify your product honestly: **accurate above ~50 W**, and treat that as a
+  hard floor rather than a comfortable margin. Do not let marketing round it
+  down.
+- If night-time accuracy turns out to matter to customers, that is a concrete,
+  measurable reason to move to v2 — see [§8](08-v2-upgrade-path.md).
 - Implement the no-load threshold from
   [calibration §4.5(d)](04-calibration-and-test.md). Without it, a couple of
   watts of noise accumulates into **~1.4 kWh of phantom consumption per month**,
@@ -223,10 +240,13 @@ Minimum sensible practice for Phase 2:
 Thirty-four SMD placements by hand, 1,000 times, by several people, is where
 defects come from — not from the circuit.
 
-- The ATM90E26's 0.65 mm pitch is the hardest joint on the board. Drag-soldering
-  with good flux is reliable, but it needs practice and magnified inspection.
-- Expect a first-pass yield around 90–95 % by hand. Budget rework time and
-  spare parts accordingly (order 5 % spares of every part, 10 % of the ICs).
+- **With the HLW8032 at 1.27 mm pitch, there is no longer a hard part on this
+  board.** The finest pitch is now shared between the metering IC, the DS3231
+  (SOIC-16) and the ESP32 module's castellated pads — all comfortable by hand.
+  This was the main reason for the v1 chip choice.
+- Expect a first-pass yield around 95–98 % by hand, up from 90–95 % with the
+  ATM90E26. Still budget rework time and spare parts (5 % spares of every part,
+  10 % of the ICs).
 - This is the strongest argument for the stencil + hotplate route in
   [tooling §7](07-assembly-and-tooling.md): it does not just save time, it makes
   the joints *consistent*, which is what actually determines your yield.
@@ -266,10 +286,11 @@ that your marketing should be honest about:
 
 | # | Decision | My recommendation | Deadline |
 |---|---|---|---|
-| 1 | ATM90E26 vs BL0940 fallback | ATM90E26 if you can secure 1,000 pieces; decide now | **Before PCB layout** |
+| 1 | ~~ATM90E26 vs fallback~~ | **DECIDED: HLW8032 for v1**, ATM90E26 held for v2 | ✅ closed |
 | 2 | 4 MB vs 8 MB ESP32 module | **8 MB (N8)** | Before ordering modules |
-| 3 | Final `Rb` and `Rv5` values | Verify on 5 prototypes | Before the 1,000-unit component order |
+| 3 | Final `Rb`, `Rv5` and `Cf2` values | Verify and tune on 5 prototypes | Before the 1,000-unit component order |
 | 4 | 3D-printed vs off-the-shelf enclosure | Printed (PETG/ABS) for pilot, V-0 box for volume | Before pilot batch ships |
 | 5 | Buy a stencil + hotplate? | **Yes** — see [§7.3](07-assembly-and-tooling.md) | Before volume assembly |
 | 6 | Cloud backend and data model | Out of scope here; the board is agnostic | Phase 2 |
-| 7 | Board variant with BL0940 footprint as insurance | Worth the ~US$ 50 for a small PCB order | With decision 1 |
+| 7 | When to start v2 | When machine assembly is on the table, or when night-time accuracy becomes a real customer complaint | After v1 ships |
+| 8 | Does BL0942 have a phase register? | Worth 10 minutes before planning v2 — if yes it may beat the ATM90E26 | Before v2 layout |

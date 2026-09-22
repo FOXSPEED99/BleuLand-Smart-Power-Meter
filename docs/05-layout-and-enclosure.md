@@ -14,7 +14,7 @@ layout is not cosmetic.
 | Size | ~50 × 45 mm | Driven by the HLK-PM01 (34 × 20 mm) and the ESP32 module (18 × 25.5 mm). |
 | Thickness | 1.6 mm | Standard, rigid enough for screw terminals. |
 | Copper | 1 oz (35 µm) | Currents are tiny; this is about mechanical robustness. |
-| Surface finish | **ENIG preferred**, HASL acceptable | ENIG gives dead-flat pads, which makes drag-soldering the 0.65 mm SSOP-28 noticeably easier. Worth the small premium when you will do it 1,000 times. |
+| Surface finish | **HASL is fine for v1**, ENIG optional | With no fine-pitch part left on the board, HASL's slight unevenness no longer matters. ENIG is still nicer to solder and becomes worth the premium if you move to the v2 ATM90E26. |
 | Solder mask | Any colour; **white silkscreen must be legible** | Assemblers will read it 1,000 times. |
 | Special | **Routed slot** on the isolation barrier | See §5.2. |
 
@@ -114,10 +114,9 @@ those two facts compatible.
   components on mismatched tracks are still mismatched.
 - Keep the CT tracks **away from PS1** (switching noise) and **away from the
   ESP32 antenna**.
-- **Crystal Y1 within 5 mm of pins 22/23**, with C10/C11 right beside it, a
-  grounded guard ring around the whole oscillator, and **no tracks underneath on
-  either layer**.
-- Decoupling caps C8/C9 hard against their supply pins — under 2 mm of track.
+- The HLW8032 has an internal oscillator, so there is **no crystal to place** —
+  one less layout constraint than a typical metering design.
+- Decoupling cap C8 hard against the metering IC's supply pin — under 2 mm of track.
 - The ferrite bead FB1 goes in the AVDD feed, with C7 on the analog side of it.
 
 ## 5.5 Power layout

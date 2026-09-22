@@ -16,23 +16,21 @@ D1,1,Diode,1N4148W,SOD-123,SMD,SELV,LDO reverse-feed protection,SS14 / BAT54 / 1
 C4,1,Electrolytic capacitor,470uF 10V 105C,Radial,THT,SELV,3.3V bulk for Wi-Fi bursts,470-1000uF low ESR,Place within 10mm of ESP32 3V3 pin
 C5,1,Ceramic capacitor,10uF 16V X7R,0805,SMD,SELV,3.3V mid-freq decoupling,4.7-22uF X5R/X7R,
 C6,1,Ceramic capacitor,100nF X7R,0805,SMD,SELV,3.3V HF decoupling,,
-U2,1,ATM90E26-YU-R,Metering IC,SSOP-28 0.65mm,SMD,SELV,Energy measurement engine,BL0940 TSSOP-14 (LCSC C691894) / HLW8032 SOP-8 (C128023),LCSC C616398 - CHECK STOCK BEFORE PCB ORDER
-Y1,1,Crystal,8.192MHz 18pF,HC-49S,THT,SELV,Metering timebase,SMD 3225 8.192MHz,Frequency is not negotiable
-C10,1,Ceramic capacitor,27pF NP0,0805,SMD,SELV,Crystal load,22-33pF NP0,Must be NP0/C0G
-C11,1,Ceramic capacitor,27pF NP0,0805,SMD,SELV,Crystal load,22-33pF NP0,Must be NP0/C0G
-FB1,1,Ferrite bead,600R @100MHz,0805,SMD,SELV,Analog supply noise isolation,120-1000R @100MHz,
-C7,1,Ceramic capacitor,10uF X7R,0805,SMD,SELV,AVDD bulk,4.7-22uF,
-C8,1,Ceramic capacitor,100nF X7R,0805,SMD,SELV,AVDD decoupling,,Place hard against pin
-C9,1,Ceramic capacitor,100nF X7R,0805,SMD,SELV,DVDD decoupling,,Place hard against pin
-Rb,1,Resistor thin film,10R 1% <=50ppm/C 0.25W,0805 or 1206,SMD,SELV,CT burden - sets current full scale,12R (published reference value),VERIFY ON PROTOTYPE - no wirewound - no >50ppm
+U2,1,HLW8032,Metering IC,SOP-8 1.27mm,SMD,SELV,Energy measurement engine (V I P PF energy),ATM90E26-YU-R SSOP-28 = v2 upgrade path,LCSC C128023 ~32000 in stock. 5V supply. Internal 3.579MHz - NO crystal. UART TX-only 4800 baud 24-byte packet. No writable registers
+Rls1,1,Resistor,1k 1%,0805,SMD,SELV,UART level shifter series element,1-10k keeping 1:2 ratio,HLW8032 TX is 5V - ESP32 is NOT 5V tolerant
+Rls2,1,Resistor,2k 1%,0805,SMD,SELV,UART level shifter shunt element,2-20k keeping ratio,5V x 2k/(1k+2k) = 3.33V
+FB1,1,Ferrite bead,600R @100MHz,0805,SMD,SELV,Keeps Wi-Fi/digital noise off the metering IC 5V supply,120-1000R @100MHz >=200mA,
+C7,1,Ceramic capacitor,10uF X7R,0805,SMD,SELV,Metering IC 5V supply bulk,4.7-22uF,
+C8,1,Ceramic capacitor,100nF X7R,0805,SMD,SELV,Metering IC decoupling,,Place hard against pin
+Rb,1,Resistor thin film,0.68R 1% <=50ppm/C 0.25W,0805 or 1206,SMD,SELV,CT burden - sets current full scale,0.51-0.77R per real chip full scale,VERIFY ON PROTOTYPE - HLW8032 full scale is only ~20-30mV - NO programmable gain to fall back on
 Rb2,0,Resistor,DNP,0805,SMD,SELV,Burden trim footprint,,Leave empty
-Rv5,1,Resistor thin film,330R 1% <=50ppm/C,0805,SMD,SELV,ZMPT secondary burden - voltage full scale,62R if IC full scale is ~120mV,VERIFY ON PROTOTYPE
+Rv5,1,Resistor thin film,150R 1% <=50ppm/C,0805,SMD,SELV,ZMPT secondary burden - voltage full scale,62-330R per real chip full scale,VERIFY ON PROTOTYPE
 Rv6,0,Resistor,DNP,0805,SMD,SELV,Voltage trim footprint,,Leave empty
 Rf1,1,Resistor,1k 1%,0805,SMD,SELV,Voltage channel anti-alias,470R-2.2k,
 Rf2,1,Resistor,1k 1%,0805,SMD,SELV,Current channel anti-alias,470R-2.2k,MATCHED PAIR with Rf3
 Rf3,1,Resistor,1k 1%,0805,SMD,SELV,Current channel anti-alias,470R-2.2k,MATCHED PAIR with Rf2
-Cf1,1,Ceramic capacitor,33nF NP0,0805,SMD,SELV,Voltage anti-alias ~4.8kHz,22-47nF NP0,
-Cf2,1,Ceramic capacitor,33nF NP0,0805,SMD,SELV,Current anti-alias ~4.8kHz,22-47nF NP0,
+Cf1,1,Ceramic capacitor,33nF NP0,0805,SMD,SELV,Voltage anti-alias ~4.8kHz (0.59deg lag),22-47nF NP0,
+Cf2,1,Ceramic capacitor,120nF NP0,0805,SMD,SELV,Current anti-alias AND CT phase compensation,56-180nF per measured CT phase error,TUNE ON PROTOTYPE - larger than Cf1 on purpose - re-tune if CT supplier changes
 Cf3,1,Ceramic capacitor,10nF NP0,0805,SMD,SELV,Common-mode filter,,
 Cf4,1,Ceramic capacitor,10nF NP0,0805,SMD,SELV,Common-mode filter,,
 D2,1,TVS bidirectional,SMAJ5.0CA,DO-214AC,SMD,SELV,CT open-circuit / ESD clamp,P6KE6.8CA / SMBJ5.0CA,Must be bidirectional

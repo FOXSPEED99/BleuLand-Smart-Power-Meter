@@ -55,9 +55,13 @@ single highest-value decision in this design.
 
 ### Bonus
 Once you measure voltage you get, for free: real-time mains voltage (a feature
-customers in Syria genuinely care about), power factor, line frequency, and
-sag/brownout detection. All of these become app features at zero extra hardware
-cost.
+customers in Syria genuinely care about), power factor, and sag/brownout
+detection. All of these become app features at zero extra hardware cost.
+
+*(The HLW8032 reports voltage, current, active power, apparent power and power
+factor. It does not report line frequency — the ATM90E26 did. Since you are
+grid-only at a stable 50 Hz, this costs you a nice-to-have diagnostic rather
+than a feature. Confirm against the datasheet before promising it in the app.)*
 
 ---
 
@@ -112,38 +116,101 @@ parts are through-hole, which is *easier* to hand-solder, not harder.
 
 ---
 
-## 1.4 Decision 3 — **ATM90E26** as the metering front end
+## 1.4 Decision 3 — **HLW8032** for v1, ATM90E26 held for v2
 
-### The shortlist and how it was resolved
+This decision was reopened after the first draft, and the reversal is
+deliberate. The reasoning is worth keeping because it is a good example of
+letting a real constraint beat a spec sheet.
+
+### The shortlist
 
 Your "no hidden pads" rule eliminates most modern metering ICs immediately.
 
-| Candidate | Package | Verdict |
+| Candidate | Package | Pitch | Verdict |
+|---|---|---|---|
+| **HLW8032** | **SOP-8** | **1.27 mm** | **CHOSEN for v1.** 8 pins at twice the pitch of anything else on the list — genuinely easy by hand. ~US$ 0.27 with ~32,000 in stock. Internal 3.579 MHz oscillator, so no crystal. Runs on 5 V, UART broadcast only. |
+| ATM90E26-YU-R | SSOP-28 | 0.65 mm | **Held for v2.** Technically the best fit: 0.1 % class, 5000:1 dynamic range, **phase-compensation register**, current-channel PGA, English datasheet. But ~230 pieces in stock against a 1,000-unit need, and 28 fine-pitch pins. See [§8](08-v2-upgrade-path.md). |
+| BL0942 | TSSOP-14 / SSOP-10 | 0.65 mm | Rejected for v1. Fewer pins than the ATM90E26 but **the same pitch** — it does not solve the soldering constraint, only halves the exposure. Worth revisiting for v2 if it turns out to have a phase register. |
+| BL0940 | TSSOP-14 | 0.65 mm | Same objection as BL0942. |
+| CS5490 | SOIC-16 | 1.27 mm | Nice package, but ~US$ 4.75 and out of stock. Rejected on price and supply. |
+| ADE7953 | LFCSP-28 | — | **Rejected outright.** Leadless with an exposed thermal pad — exactly the part type you asked us to avoid. Unbuildable with your equipment. |
+| ADE7753 | SSOP-20 | 0.65 mm | Viable but older, pricier, thinner supply. |
+| ESP32 internal ADC | — | — | Rejected. Noisy, non-linear, temperature-sensitive; 1 % from it is a research project, not a product. |
+
+### Why the easier chip won
+
+The ATM90E26 is the better chip. It is not the better *decision* for a first
+production run, for four reasons:
+
+1. **Supply.** ~230 pieces in stock against a 1,000-unit need was the single
+   biggest risk in the original design. The HLW8032 has ~32,000. That risk
+   simply disappears.
+2. **Assembly yield.** 28 pins at 0.65 mm, hand-soldered 1,000 times by several
+   people of varying skill, was the most likely defect on the board. 8 pins at
+   1.27 mm is not a risk at all.
+3. **The accuracy gap is small, and smaller than the error you already have.**
+   Modelled over a realistic household day (see [§4.1](04-calibration-and-test.md)):
+
+   | | kWh/day on a true 25.10 | Error |
+   |---|---|---|
+   | ATM90E26 | 25.15 | +0.19 % |
+   | HLW8032, no phase fix | 25.45 | +1.40 % |
+   | **HLW8032 + one 120 nF capacitor** | **25.22** | **+0.48 %** |
+
+   Meanwhile the **unit-to-unit spread caused by the clamp is ±1.6 %** — larger
+   than the entire gap between the chips, and identical for both because they
+   share the same front end.
+4. **Cost.** US$ 0.27 against US$ 1.32, and the crystal and its two load
+   capacitors come off the board too. About US$ 1.15 per unit, US$ 1,150 across
+   the run.
+
+### What you are actually giving up
+
+Be honest about this in your product spec — it is not nothing:
+
+| | ATM90E26 | HLW8032 |
 |---|---|---|
-| **ATM90E26-YU-R** | **SSOP-28, 0.65 mm** | **CHOSEN.** Hand-solderable. 0.1 % active-energy class, 5000:1 dynamic range. Explicitly supports CT input. Has current-channel PGA (1/4/8/16/24×) and phase-compensation registers. SPI + UART. 3.3 V native. English datasheet + existing open-source drivers (ESPHome, Arduino). ~US$ 1.32. |
-| ADE7953 | LFCSP-28 only | **Rejected.** Leadless package with an exposed thermal pad — exactly the part type you asked us to avoid. Technically excellent, but unbuildable with your equipment. |
-| ADE7753 | SSOP-20 | Viable but older, more expensive, and thinner supply than ATM90E26. Kept as a distant alternative. |
-| CS5490 | SOIC-16 | Nice package, but ~US$ 4.75 and **out of stock** at LCSC. Rejected on price and supply. |
-| BL0940 | TSSOP-14 | **Kept as Plan B.** ~US$ 0.36, thousands in stock, no crystal needed, Tasmota/ESPHome drivers exist. But it is designed around a shunt, its documentation is largely Chinese, and its "calibration-free" trimming does not carry over to a CT front end. Lower confidence for a billing product. |
-| HLW8032 / CSE7766 | SOP-8 | Cheapest and best-stocked (~US$ 0.27, 32,000 pcs). Simple 4800-baud UART output. But limited calibration control and weaker phase handling. A fallback, not a first choice. |
-| ESP32 internal ADC | — | **Rejected by your own answer**, and correctly so. The ESP32's ADC is noisy, non-linear and temperature-sensitive; getting 1 % out of it is a firmware research project, not a product. |
+| Dynamic range | 5000 : 1 | **400 : 1** |
+| Smallest reliable load | 4 W | **45 W** |
+| Phase correction | register, per unit | fixed capacitor, per batch |
+| Calibration | into the chip | ESP32 firmware only |
+| Datasheet | English | **largely Chinese** |
+| Interface | SPI, bidirectional | UART, **transmit only** |
 
-### Why the metering IC matters more than it looks
-The ATM90E26 does the hard real-time work in silicon: synchronous sampling of
-both channels, RMS and power integration, energy accumulation, frequency
-measurement, and phase-error correction. Your ESP32 firmware just reads finished
-numbers over SPI. This means:
-- Wi-Fi activity, TLS handshakes and cloud retries **cannot** disturb the
-  measurement. On an MCU-sampling design, a 200 ms TLS stall loses 10 mains
-  cycles of energy.
-- Calibration is three register writes, not a firmware algorithm.
-- A junior firmware engineer can maintain it.
+**The dynamic range is the real cost, not the phase error.** A house spends most
+of the night between 200 and 400 W, which is close to the HLW8032's floor. Your
+marketing must say **"accurate above 50 W"** and mean it.
 
-### The supply risk (read this)
-At the time of writing, LCSC showed roughly **200–230 pieces in stock at ~US$
-1.32**. That is *not* enough for a 1,000-unit run in one order. See
-[`docs/06-risks-and-decisions.md`](06-risks-and-decisions.md) §6.1 for the
-mitigation — this is the most likely thing to bite you.
+### The phase problem, and the capacitor that solves it
+
+A current transformer shifts the current waveform by roughly 1.5° relative to
+the true current — at 50 Hz that is **83 microseconds**. Because real power is
+`V × I × cos(φ)`, this costs almost nothing on resistive loads (you are at the
+flat top of the cosine curve) and about 2 % on a PF-0.8 motor load (you are on
+the steep part).
+
+The ATM90E26 cancels it with a register. The HLW8032 has no registers at all —
+it only broadcasts. So we cancel it in hardware instead, by making the
+current-channel anti-alias capacitor larger than the voltage channel's, which
+makes the current signal lag by exactly enough to compensate. **One capacitor,
+`Cf2`, typically 120 nF.** Details and the tuning procedure are in
+[`docs/02-circuit.md`](02-circuit.md) §2.5.3.
+
+### The v1 → v2 strategy
+
+v1 ships with the HLW8032 and is hand-assembled. If the product succeeds, v2
+moves to machine assembly, at which point "easy to solder" stops being a
+constraint and the ATM90E26 becomes available again at no assembly cost.
+
+To keep that door open, four things must be true from **day one** — all of them
+free, all of them painful to retrofit:
+
+- **Log raw `V`, `I` and `P` to your server, not just kWh.** Then a v1 and a v2
+  unit on the same house can be compared directly.
+- **Carry a `hardware_revision` field in the database from the first record.**
+- **Keep calibration constants in NVS, never hard-coded.**
+- **Keep the CT, burden and voltage front end architecturally the same**, so
+  calibration procedure and installer training transfer unchanged.
 
 ---
 
@@ -256,11 +323,19 @@ an entire class of data-integrity bugs.
 Without any hardware change, the board can report, per minute:
 
 `timestamp · Vrms · Irms · active power (W) · apparent power (VA) · power factor
-· line frequency · cumulative energy (Wh) · signal quality flags`
+· cumulative energy (Wh) · signal quality flags · hardware_revision`
 
 That is enough for: live consumption, daily/weekly/monthly kWh, bill estimation
 at a user-entered price per kWh, voltage-quality history and brownout alerts,
-"which day was most expensive", and anomaly detection. The cumulative energy
-register is the important one — **bill from the accumulated Wh counter, not from
-the sum of power samples**, because the counter cannot lose energy during a
-network stall.
+"which day was most expensive", and anomaly detection.
+
+Two rules for the Phase 2 backend, both of which are much cheaper to honour now
+than to retrofit:
+
+1. **Bill from the accumulated energy counter, not from the sum of power
+   samples.** The counter cannot lose energy during a network stall; a sum of
+   samples can.
+2. **Store `hardware_revision` on every record, and store raw `V`, `I`, `P`
+   alongside the kWh.** When the v2 board arrives you will want to put an old
+   and a new unit on the same house and compare them directly. Adding this field
+   after 500 units are deployed is miserable; adding it now is free.

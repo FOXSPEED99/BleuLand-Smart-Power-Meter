@@ -87,7 +87,7 @@ marking; you do not need it to make the product work.
 | Consumer | Typical | Peak |
 |---|---|---|
 | ESP32 (Wi-Fi connected, idle) | 80 mA | 500 mA for < 2 ms during TX |
-| ATM90E26 | 4 mA | 4 mA |
+| HLW8032 (on the 5 V rail) | 3 mA | 3 mA |
 | DS3231 | 0.2 mA | 0.2 mA |
 | 2 × status LED | 4 mA | 4 mA |
 | **Total at 3.3 V** | **~90 mA** | ~510 mA burst |
@@ -185,14 +185,23 @@ We want the *maximum* expected mains voltage (take 300 V as the design ceiling)
 to land at roughly 80–85 % of the metering IC's full-scale input, leaving
 headroom so surges clip the TVS rather than the ADC.
 
-| If ATM90E26 full scale is… | Target at 300 V | Required Rv5 | Reading at 230 V |
+| If the HLW8032's voltage full scale is… | Target at 300 V | Required Rv5 | Reading at 230 V |
 |---|---|---|---|
 | ~600 mV RMS | 500 mV | **330 Ω** | 402 mV |
+| ~300 mV RMS | 250 mV | **150 Ω** | 183 mV |
 | ~120 mV RMS | 100 mV | **62 Ω** | 83 mV |
 
-**Recommended starting value: 330 Ω**, with a second parallel footprint (`Rv6`,
-not populated) so you can trim downward on the prototypes without cutting traces.
-See §3.3 — this is one of the two values you must confirm on hardware.
+**Recommended starting value: 150 Ω**, with a second parallel footprint (`Rv6`,
+not populated) so you can trim on the prototypes without cutting traces.
+See §3.3 — this is one of the values you must confirm on hardware.
+
+> ⚠️ **The HLW8032's datasheet assumes a resistor divider straight from mains,
+> not a transformer.** Its stated input range (85–280 VAC) refers to the mains
+> voltage behind the divider it specifies, not to the signal at its pin. You must
+> find the **actual pin-level full-scale voltage** in the datasheet and size
+> `Rv5` from that. Do not copy a divider ratio from a shunt-based reference
+> design — your signal arrives through the ZMPT101B instead, and the numbers do
+> not carry over.
 
 ### Important: buy the bare ZMPT101B transformer, not the "ZMPT101B module"
 
@@ -223,11 +232,11 @@ four pins.
 |---|---|---|
 | CT1 | Split-core CT, 100 A : 50 mA (2000:1), 13 mm window — `SCT-013-000` | Non-invasive current sensing. **External to the PCB.** |
 | J2 | 2-pin screw terminal, 3.5 mm pitch | CT connection. Deliberately a *different size* from J1 so mains can never be wired here by mistake. |
-| Rb | 10 Ω, 1 %, **≤ 50 ppm/°C**, 0.25 W | **Burden resistor** — converts CT secondary current to voltage. *Value to confirm — see §3.3.* |
+| Rb | **0.68 Ω**, 1 %, **≤ 50 ppm/°C**, 0.25 W | **Burden resistor** — converts CT secondary current to voltage. *Value to confirm — see §3.3.* |
 | Rb2 | (parallel footprint, not populated) | Range trimming during prototype bring-up. |
 | D2 | SMAJ5.0CA bidirectional TVS | Clamps the open-circuit spike and ESD on the CT leads. |
 | Rf2, Rf3 | 1 kΩ, 1 %, **matched pair** | Anti-alias / current-limit into the differential input. |
-| Cf2 | 33 nF NP0 (differential) | Anti-alias. |
+| Cf2 | **120 nF NP0** (differential) | Anti-alias **and CT phase compensation** — see §2.5.3. Larger than the voltage channel's 33 nF on purpose. |
 | Cf3, Cf4 | 10 nF NP0 (each leg to AGND) | Common-mode filtering. |
 
 ### The arithmetic
@@ -237,10 +246,28 @@ CT ratio            : 2000 : 1   (100 A primary → 50 mA secondary)
 Design full scale   : 78 A primary  (63 A breaker + 24 % headroom)
 Secondary at 78 A   : 78 / 2000 = 39 mA RMS
 
-Burden voltage      : V = 39 mA × 10 Ω = 390 mV RMS
-Burden dissipation  : P = (39 mA)² × 10 Ω = 15 mW      ← nothing ✓
-Sensitivity         : 10 Ω / 2000 = 5 mV per amp
+Burden voltage      : V = 39 mA × 0.68 Ω = 26.5 mV RMS
+Burden dissipation  : P = (39 mA)² × 0.68 Ω = 1 mW     ← nothing ✓
+Sensitivity         : 0.68 Ω / 2000 = 0.34 mV per amp
 ```
+
+**Why the burden is so much smaller than you might expect.** The HLW8032's
+current channel was designed for a 1 mΩ shunt carrying 20 A — that is 20 mV. Its
+full-scale input is therefore only about **20–30 mV RMS**, an order of magnitude
+below the ATM90E26's. The burden must be sized to match:
+
+| If the chip's full scale is | Required Rb |
+|---|---|
+| 20 mV RMS | 0.51 Ω |
+| **25 mV RMS** | **0.64 Ω** |
+| 30 mV RMS | 0.77 Ω |
+
+`0.68 Ω` is the nearest E24 value to the middle of that range. **Confirm the real
+figure from the datasheet before ordering 1,000 of them — see §3.3.**
+
+One genuine silver lining: a lower burden loads the CT less, which *reduces* its
+phase error and improves its linearity. Some of what you lose in signal level you
+get back in sensor behaviour.
 
 ### Why the burden resistor is the most important passive on the board
 
@@ -256,23 +283,28 @@ Everything about your current accuracy flows through this one part:
 - Use a 1 % metal-film or thin-film part. Do not use a wirewound resistor here —
   its inductance introduces phase error that varies with frequency.
 
-### Deliberately choosing the burden on the *low* side
+### Getting this value right matters more than it did before
 
-Note that 10 Ω is a conservative choice. Here is the reasoning, and it is worth
-understanding because it applies to every ADC front end you will ever design:
+With the ATM90E26 there was a safety net: if the burden turned out too small, you
+raised the chip's programmable gain in firmware and recovered the resolution.
 
-> **Clipping is unrecoverable. Gain is a register write.**
+**The HLW8032 has no programmable gain.** What the burden resistor gives the chip
+is what the chip gets. That makes `Rb` a one-shot decision:
 
-If the burden is too large and a 60 A load clips the ADC, the reading is silently
-wrong and no firmware can fix it — you must unsolder 1,000 resistors. If the
-burden is too small, the signal is smaller than ideal, and you simply raise the
-ATM90E26's PGA from 1× to 4× in firmware and get the resolution back.
+- **Too large** → a 60 A load clips the ADC. The reading is silently wrong and no
+  firmware can fix it. You would unsolder 1,000 resistors.
+- **Too small** → every reading is noisier and the low-load floor gets worse, and
+  again no firmware can fix it.
 
-So: size for no clipping at the worst case, and keep the PGA in your pocket.
+The signal levels here are genuinely small. At the 250 W night standby of a
+typical home (1.45 A), the burden produces about **0.5 mV**. That is still
+comfortably above the chip's ~50 µV floor, but it means the CT input layout in
+[`docs/05-layout-and-enclosure.md`](05-layout-and-enclosure.md) §5.4 —
+short, tight, symmetrical differential traces on a clean analog ground — is no
+longer a nicety. It is load-bearing.
 
-> ⚠️ One caveat: with `Rb = 10 Ω`, PGA **must stay at 1×** for whole-house use.
-> PGA 4× would clip at about 19 A. The PGA is a recovery option only if you
-> discover the real full scale is much larger than assumed.
+> **Build 5 prototypes and sweep this value before committing.** The parallel
+> trim footprint `Rb2` exists exactly for that.
 
 ### CT safety
 
@@ -290,60 +322,145 @@ from the cable before disconnecting its wires from the device.*
 
 ---
 
-## 2.5 Block E — Metering IC (ATM90E26)
+## 2.5 Block E — Metering IC (HLW8032)
+
+> **v1 baseline.** The ATM90E26 design this replaced is preserved in
+> [`docs/08-v2-upgrade-path.md`](08-v2-upgrade-path.md). Read that before
+> starting v2.
 
 ```
                         ┌──────────────────────┐
-     3V3 ──[FB1]──┬─────┤ AVDD                 │
-                  │     │                 CS   ├──► ESP32 IO5
-                C7 10µF │                 SCK  ├──► ESP32 IO18
-                C8 100nF│                 MOSI ├──► ESP32 IO23
-                  │     │                 MISO ├──◄ ESP32 IO19
-                AGND    │                      │
-     3V3 ──────────┬────┤ DVDD            IRQ  ├──► ESP32 IO4  (optional)
-                 C9 100nF                 ZX   ├──► ESP32 IO16 (optional)
-                   │    │                      │
-                 DGND   │ USEL ── GND (= SPI)  │
-                        │                      │
-      V sense ─────────►│ VP              OSCI ├──┬── Y1 8.192 MHz ──┬── OSCO
-      AGND ────────────►│ VN                   │ C10 27pF        C11 27pF
-      CT + ────────────►│ I1P                  │  │                  │
-      CT − ────────────►│ I1N                  │ AGND               AGND
+     5V ──────────┬─────┤ VDD (5 V)            │
+                  │     │                      │      Rls1 1k
+                C7 10uF │                 TX   ├────[1k]──┬──► ESP32 IO16 (RX2)
+                C8 100nF│  (4800 baud, 8N1,    │          │
+                  │     │   transmit only)     │        Rls2 2k
+                AGND    │                      │          │
+                        │                 PF   ├──►       │
+      V sense ─────────►│ V channel   (energy  │  (opt)  AGND
+      CT + ────────────►│ I channel    pulse)  │
+      CT - ────────────►│                      │
+                        │   internal 3.579 MHz │
+                        │   NO CRYSTAL NEEDED  │
                         └──────────────────────┘
 ```
 
 | Ref | Value | Role |
 |---|---|---|
-| U2 | ATM90E26-YU-R, SSOP-28 | The measurement engine. |
-| Y1 | 8.192 MHz crystal, 18 pF load (HC-49S through-hole, or 3225 SMD) | Timebase for all metering. **Must be 8.192 MHz** — the IC's internal constants depend on it. |
-| C10, C11 | 27 pF, NP0/C0G | Crystal load capacitors. |
-| FB1 | Ferrite bead, 600 Ω @ 100 MHz, 0805 | Isolates the analog supply from digital/Wi-Fi switching noise. |
-| C7 | 10 µF X7R | Analog supply bulk. |
-| C8, C9 | 100 nF X7R | Analog and digital supply decoupling. |
+| U2 | **HLW8032, SOP-8 (1.27 mm pitch)** | The measurement engine. |
+| C7 | 10 uF X7R, 0805 | 5 V supply bulk for the analog section. |
+| C8 | 100 nF X7R, 0805 | Supply decoupling, hard against the pin. |
+| Rls1 | 1 kOhm, 0805 | Level shifter, series element. |
+| Rls2 | 2 kOhm, 0805 | Level shifter, shunt element. |
 
-### Crystal load capacitor calculation
+### Why this chip (and what it costs you)
+
+Chosen for **v1** because at 1.27 mm pitch and 8 pins it is trivially
+hand-solderable, it has ~32,000 pieces in stock at ~US$ 0.27 (versus ~230 pieces
+of the ATM90E26), and it needs no external crystal. See
+[`docs/01-architecture.md`](01-architecture.md) §1.4 for the full reasoning.
+
+What you give up, stated plainly:
+
+| | ATM90E26 | **HLW8032** |
+|---|---|---|
+| Dynamic range | 5000 : 1 | **~400 : 1** |
+| Smallest reliable load (78 A full scale) | 4 W | **45 W** |
+| Phase compensation | register | **none — fixed in hardware, see §2.5.3** |
+| Calibration | written into the chip | **all in ESP32 firmware** |
+| Datasheet | English | **largely Chinese** |
+
+The dynamic range is the one that actually bites. Your product spec must say
+**"accurate above 50 W"**, and that is now a hard floor rather than a comfortable
+margin.
+
+### 2.5.1 It only talks — it never listens
+
+The HLW8032 has no configuration. It continuously broadcasts a **24-byte packet
+at 4800 baud, 8N1**, containing voltage, current, power, a power-factor/energy
+pulse counter and a checksum. There is no way to write anything to it.
+
+Consequences for the design:
+
+- **All calibration happens in ESP32 firmware**, as scaling constants stored in
+  NVS. See [`docs/04-calibration-and-test.md`](04-calibration-and-test.md).
+- **Always validate the checksum** before using a packet. At 4800 baud in an
+  electrically noisy panel you will get corrupted frames, and a corrupted power
+  value silently poisons the customer's energy total. Discard and wait for the
+  next packet — one arrives roughly every 50 ms, so dropping bad frames costs
+  nothing.
+- Only one wire is needed: the chip's TX to an ESP32 RX pin.
+
+### 2.5.2 The 5 V level shifter (do not skip this)
+
+The HLW8032 runs on **5 V**, so its TX pin idles at 5 V. **ESP32 GPIOs are not
+5 V tolerant.** Connecting them directly will damage the ESP32, possibly not
+immediately, which is worse.
+
+A two-resistor divider is all that is required:
 
 ```
-C_load(crystal) = 18 pF     C_stray(PCB+pins) ≈ 5 pF
+HLW8032 TX ──[Rls1 1k]──┬──► ESP32 RX
+                        │
+                    [Rls2 2k]
+                        │
+                       GND
 
-C10 = C11 = 2 × C_load − 2 × C_stray = 2(18) − 2(5) = 26 pF  →  use 27 pF (E24)
+  V_esp = 5 V x 2k / (1k + 2k) = 3.33 V   ✓
 ```
 
-Place the crystal **within 5 mm of pins 22/23**, with a grounded copper guard
-ring around it and no signals routed underneath.
+No level shifting is needed in the other direction, because there is no other
+direction.
 
-### Interface selection
-Tie **USEL (pin 12) to GND** to select SPI. SPI is preferred over the UART option
-because it is faster, has no baud-rate calibration issues, and shares cleanly
-with the optional W25Q64 flash footprint.
+### 2.5.3 Hardware phase compensation (replaces the ATM90E26's phase register)
 
-### Follow the datasheet reference circuit exactly
-The ATM90E26 has specific requirements for its internal voltage reference and
-supply decoupling. When you draw the schematic, put the datasheet's typical
-application circuit next to it and match it pin for pin. Metering ICs are much
-less forgiving of "close enough" decoupling than a typical MCU — a missing
-reference capacitor shows up as slow gain drift, which is exactly the kind of
-bug you will not find until 500 units are in the field.
+A current transformer shifts the current waveform in time by roughly 1.5 degrees
+relative to the true current. At 50 Hz, **1 degree is 55.6 microseconds**. The
+ATM90E26 cancelled this with a register. The HLW8032 has no register, so we
+cancel it with **one capacitor**.
+
+The anti-alias filters already on the board (`1k + 33nF` on each channel) each
+introduce a 0.59 degree lag. Because both channels lag equally, they cancel and
+contribute no net error. To compensate the CT, make the **current** channel's
+capacitor larger so it lags *more* than the voltage channel, and tune that extra
+lag to cancel the CT's lead.
+
+```
+lag (degrees) = arctan( 2 x pi x f x R x C )        R = Rf2 = 1 kOhm, f = 50 Hz
+```
+
+| CT phase error | Set Cf2 to | Residual | Current-channel corner |
+|---|---|---|---|
+| 0.5 deg | 56 nF | 0.09 deg | 2,840 Hz |
+| 1.0 deg | 82 nF | 0.12 deg | 1,940 Hz |
+| **1.5 deg (typical)** | **120 nF** | **0.06 deg** | 1,330 Hz |
+| 2.0 deg | 150 nF | 0.10 deg | 1,060 Hz |
+| 2.5 deg | 180 nF | 0.14 deg | 880 Hz |
+
+**Start at 120 nF** and tune empirically on the prototypes — the procedure is in
+[`docs/04-calibration-and-test.md`](04-calibration-and-test.md) §4.5(c). A
+residual of 0.06 degrees costs about 0.06 % per day, which is *better* than the
+ATM90E26's calibrated 0.2 degrees.
+
+Two caveats:
+- The larger capacitor drops the current-channel anti-alias corner from 4.8 kHz
+  to ~1.3 kHz. Fine for 50 Hz energy measurement; it softens high harmonics
+  slightly.
+- This is a **fixed** correction tuned to one CT model. **Change clamp supplier,
+  re-tune and re-qualify.** Write that into your purchasing rules.
+
+### 2.5.4 Pinout — read it off the datasheet, do not guess
+
+The HLW8032 is an 8-pin device carrying: 5 V supply, ground, the differential
+current-channel inputs, the voltage-channel input, the UART TX output, and an
+energy pulse output. **Map these to actual pin numbers from the Hiliwei
+HLW8032 user manual (Rev 1.5) when you draw the schematic** — the pin order is
+not something to take from any secondary source, including this document.
+
+Follow the datasheet's typical application circuit for supply decoupling and
+input filtering exactly. Metering ICs are far less forgiving of approximate
+decoupling than an MCU, and the failure mode is slow gain drift that you will
+not find until hundreds of units are in the field.
 
 ---
 
@@ -364,18 +481,21 @@ bug you will not find until 500 units are in the field.
 
 | ESP32 pin | Net | Note |
 |---|---|---|
-| IO5 | ATM90E26 CS | Default VSPI CS |
-| IO18 | ATM90E26 SCK | |
-| IO19 | ATM90E26 MISO | |
-| IO23 | ATM90E26 MOSI | |
-| IO4 | ATM90E26 IRQ | Optional |
-| IO16 | ATM90E26 ZX (zero cross) | Optional, useful for diagnostics |
+| **IO16 (UART2 RX)** | **HLW8032 TX**, via the 1k/2k divider | **The only metering connection.** See the warning below. |
+| IO17 (UART2 TX) | *unused* | The HLW8032 cannot receive. Leave free. |
+| IO4 | HLW8032 PF (energy pulse) | Optional — a cross-check on the UART energy counter |
+| IO5, IO18, IO19, IO23 | *free* (VSPI) | No longer needed for metering. Reserved for the optional W25Q64 footprint. |
 | IO21 | DS3231 SDA | |
 | IO22 | DS3231 SCL | |
 | IO25 | LED1 (green) | |
 | IO26 | LED2 (blue) | |
 | IO0 | SW1 + R2 | Strapping pin — boot select |
 | TXD0 / RXD0 | J3 | Programming UART |
+
+> ⚠️ **Use UART2 (IO16/IO17) for the meter, never UART0.** UART0 is the
+> programming and debug port at J3. If the HLW8032 is streaming 24-byte packets
+> into it every 50 ms, you cannot flash the board and you cannot read a debug
+> log. This costs nothing to get right now and is painful to discover later.
 
 **Strapping-pin rules — get these wrong and boards fail to boot intermittently:**
 - **IO12 must not be pulled high at reset** (it selects flash voltage). Leave it
@@ -442,31 +562,39 @@ full year.
 
 | Ref | Starting value | What it sets | Confirm by |
 |---|---|---|---|
-| **Rb** | **10 Ω** | Current full scale (~78 A) | Drive a known current and check for clipping |
-| **Rv5** | **330 Ω** | Voltage full scale (~300 V) | Sweep mains with a variac and check for clipping |
+| **Rb** | **0.68 Ω** | Current full scale (~78 A) | Drive a known current and check for clipping |
+| **Rv5** | **150 Ω** | Voltage full scale (~300 V) | Sweep mains with a variac and check for clipping |
+| **Cf2** | **120 nF** | CT phase compensation | Resistive load; tune until PF reads 1.000 (§4.5c) |
 
-**Why this is flagged rather than fixed.** Both values depend on the ATM90E26's
-full-scale differential input range at PGA = 1×. Published reference designs
-using the same `SCT-013-000` clamp use a **12 Ω** burden, which implies a
-full-scale range in the hundreds of millivolts — consistent with the 10 Ω
-starting value above. However, I could not retrieve the exact figure from the
-Microchip datasheet to state it as fact, and this number is too important to
-guess at 1,000-unit scale.
+**Why these are flagged rather than fixed.** `Rb` and `Rv5` depend on the
+HLW8032's full-scale analog input range, which its datasheet expresses in terms
+of a shunt resistor and a mains divider rather than as a pin-level voltage. The
+starting values above are derived from the published shunt configurations
+(1 mΩ at 20 A → ~20 mV; 3 mΩ at 10 A → ~30 mV), which is sound reasoning but is
+*inference*, not a quoted specification. At 1,000-unit scale that is not good
+enough. `Cf2` depends on your specific CT's phase error, which varies by
+supplier and cannot be known in advance at all.
 
 **What to do — half a day of work that de-risks the whole run:**
 
-1. Open the ATM90E26 datasheet and find the analog-input full-scale
-   specification for the voltage and current channels at gain 1×.
+1. Open the **Hiliwei HLW8032 user manual (Rev 1.5)** and find the analog-input
+   full-scale figures for the current and voltage channels, expressed at the pin.
+   Translate the relevant pages if needed — this is the one part of the Chinese
+   datasheet you cannot skip.
 2. Recompute `Rb` and `Rv5` from the formulas in §2.3 and §2.4.
-3. Build **5 prototypes**. Fit `Rb` and `Rv5` in the primary footprints and leave
-   the parallel trim footprints (`Rb2`, `Rv6`) empty.
+3. Build **5 prototypes**. Fit `Rb`, `Rv5` and `Cf2` in the primary footprints and
+   leave the parallel trim footprints (`Rb2`, `Rv6`) empty.
 4. Using the 10-turn calibration trick from
    [`docs/04-calibration-and-test.md`](04-calibration-and-test.md) §4.5, present
    the equivalent of **70 A** to the CT and confirm the reported current is
    linear and not clipping (check that doubling the load doubles the reading).
-5. With a variac, sweep mains from 180 V to 270 V and confirm the voltage reading
+5. Check the **other end** too: confirm a ~200 W load still reads sensibly. The
+   HLW8032's ~400:1 dynamic range makes the low end the real risk, not the top.
+6. With a variac, sweep mains from 180 V to 270 V and confirm the voltage reading
    stays linear across the range.
-6. **Lock both values** and order the 1,000-unit quantity.
+7. Tune `Cf2` on a resistive load until the computed power factor reads 1.000
+   (§4.5c), then fix that value for the run.
+8. **Lock all three values** and order the 1,000-unit quantity.
 
-Both trim footprints stay on the production board anyway — they cost nothing and
+The trim footprints stay on the production board anyway — they cost nothing and
 they let you build a 100 A variant later by changing one resistor.

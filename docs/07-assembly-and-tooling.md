@@ -15,7 +15,7 @@ Every choice here was made against your constraint:
 
 | Part | Package | Why it is iron-friendly |
 |---|---|---|
-| ATM90E26 | SSOP-28, 0.65 mm pitch | Gull-wing leads, fully visible and reachable. Drag-solderable. The finest pitch on the board. |
+| **HLW8032** | **SOP-8, 1.27 mm pitch** | 8 pins at twice the spacing of a typical metering IC. This is why it was chosen for v1 — see [`docs/01-architecture.md`](01-architecture.md) §1.4. |
 | ESP32 module | Castellated edge pads | The *easiest* part to hand-solder — the pads are half-holes on the module edge, so you touch the iron to the outside and the solder wicks in. |
 | DS3231 | SOIC-16, 1.27 mm | Comfortable. |
 | AMS1117 | SOT-223 | Large tab, very forgiving. |
@@ -24,27 +24,26 @@ Every choice here was made against your constraint:
 | Everything on the mains side | Through-hole | Easier, and better for voltage rating and creepage. |
 
 **Nothing on this board has a hidden pad, a thermal pad underneath, or a leadless
-package.** No QFN, no DFN, no BGA. You can build all 1,000 with an iron.
+package.** No QFN, no DFN, no BGA — and since the v1 chip change, **no fine
+pitch either**. The tightest spacing anywhere on the board is now 1.27 mm,
+shared by the metering IC, the RTC and the ESP32's castellated pads. You can
+build all 1,000 with an iron, comfortably.
 
 ---
 
 ## 7.2 Iron-only technique notes
 
-### Drag-soldering the ATM90E26 (the one hard part)
+### There is no longer a hard part
 
-1. Tack **one corner pin**. Check the alignment under magnification against the
-   footprint. Re-melt and nudge until every pin sits centred on its pad.
-2. Tack the **opposite corner**. Check again. This is the last chance to fix
-   alignment cheaply.
-3. **Flood the pins with flux.** Gel or liquid no-clean flux, generously. Flux is
-   what makes drag soldering work — not solder, not iron temperature.
-4. Use a chisel or knife tip at ~320 °C (leaded) with a small amount of solder,
-   and drag slowly along the row of pins. Surface tension pulls the solder onto
-   the pads and off the gaps.
-5. Bridges will happen. Add flux, then either drag again or lift the excess with
-   solder wick.
-6. Inspect **every pin** under magnification. A bridge on this IC's SPI pins is
-   the single most likely assembly defect on the board.
+The v1 design has no 0.65 mm pitch anywhere. Nothing on it needs drag soldering,
+a microscope, or special technique. The three ICs — HLW8032 (SOP-8), DS3231
+(SOIC-16) and the ESP32 module (castellated) — are all straightforward
+pin-by-pin work with a fine tip and flux.
+
+If you later move to v2 with the ATM90E26, that changes: SSOP-28 at 0.65 mm does
+need drag soldering. The technique is written up in
+[`docs/08-v2-upgrade-path.md`](08-v2-upgrade-path.md) §8.5, so it is there when
+you need it.
 
 ### General
 - Leaded solder (Sn63Pb37, 0.5 mm) is significantly easier than lead-free:
@@ -58,11 +57,11 @@ package.** No QFN, no DFN, no BGA. You can build all 1,000 with an iron.
 
 | Step | Time |
 |---|---|
-| 34 SMD placements by iron | 12–15 min |
-| 19 THT placements | 5–6 min |
-| Inspection | 2–3 min |
-| **Total per board** | **~20–25 min** |
-| **× 1,000 units** | **~350–400 hours ≈ 45 working days for one person** |
+| 33 SMD placements by iron | 11–13 min |
+| 18 THT placements | 5–6 min |
+| Inspection | 2 min |
+| **Total per board** | **~18–21 min** |
+| **× 1,000 units** | **~300–350 hours ≈ 40 working days for one person** |
 
 ---
 
@@ -73,7 +72,7 @@ package.** No QFN, no DFN, no BGA. You can build all 1,000 with an iron.
 | | Iron only | Stencil + hotplate |
 |---|---|---|
 | Paste printing | — | 30 s |
-| SMD placement | 12–15 min (place **and** solder each part) | ~5 min (place only, paste holds them) |
+| SMD placement | 11–13 min (place **and** solder each part) | ~5 min (place only, paste holds them) |
 | Reflow | — | 4 min, **batched** — ~1 min/board if you do 4 at a time |
 | THT by hand | 5–6 min | 5–6 min |
 | Inspection | 2–3 min | 2 min |
@@ -85,7 +84,7 @@ package.** No QFN, no DFN, no BGA. You can build all 1,000 with an iron.
 ### The bigger reason: consistency
 
 Time saved is the smaller benefit. The real one is that **reflow makes every
-joint identical**. Hand-soldering 142 SMD joints × 1,000 boards is 142,000
+joint identical**. Hand-soldering ~120 SMD joints × 1,000 boards is 120,000
 opportunities for a cold joint, a bridge, or a tombstoned resistor. Reflow
 removes almost all of them in one step.
 
@@ -111,7 +110,7 @@ boards.
 | **Squeegee** | A metal squeegee blade, or honestly an old metal scraper or a stiff plastic card. | US$ 0–10 |
 | **Fine ESD tweezers** | Buy 3–4 pairs, straight and bent tips. They wear out and get magnetised. | US$ 15 |
 | **Flux** | Gel flux in a syringe for rework, and a no-clean flux pen. Consumable — buy plenty. | US$ 10 |
-| **Inspection microscope** | A USB microscope at 1080p is enough to check the SSOP-28. A stereo microscope is better if budget allows. | US$ 40–150 |
+| **Inspection microscope** | A USB microscope at 1080p is plenty for v1's 1.27 mm parts. You would want a stereo microscope for the v2 ATM90E26. | US$ 40–150 |
 | **IPA + brushes** | For cleaning flux. Essential — see §7.6. | US$ 10 |
 | **Solder wick** | Bridge removal. | US$ 5 |
 | **Stencil jig** (optional) | A frame that holds the board and aligns the stencil repeatably. You can improvise one from scrap PCBs, but for 1,000 boards a proper jig is worth it. | US$ 20–40 |
@@ -185,7 +184,7 @@ first while you have clear access, then passives.
 unnecessary for you.)*
 
 **Step 7 — Inspect** every board under magnification before going further,
-especially the ATM90E26 and the ESP32 pads.
+especially the HLW8032 and the ESP32 pads.
 
 **Step 8 — Hand-solder the through-hole parts** (§7.6).
 
@@ -221,7 +220,6 @@ especially the ATM90E26 and the ESP32 pads.
 | BT1 (CR2032 holder) | Plastic body deforms |
 | J1, J2 (screw terminals) | Plastic bodies melt |
 | SW1 (tact switch) | Plastic actuator deforms |
-| Y1 (if through-hole) | Fine at 200 °C but no reason to risk it |
 | J3 (header) | Plastic spacer deforms |
 | B1 (CR2032 cell) | **Never** heat a lithium cell |
 

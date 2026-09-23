@@ -210,51 +210,87 @@ Only **8 of its 30 pins** are used.
 
 ---
 
-## 8. Knowing what time it is — without a clock chip
+## 8. Knowing what time it is
 
-There is **no real-time clock on this board**, and that is deliberate.
+`U4` is a **DS1307** clock chip with its own coin cell. Its only job is to keep
+time running while the device is switched off.
 
-The problem a clock would solve: the mains comes back after a cut but the
-internet is still down. The device is measuring again but does not know the
-time, so stored readings cannot be timestamped — and untrustworthy timestamps
-mean you cannot bill from them.
+### Why it is needed at all
 
-**The ESP32 solves this by itself.** It counts seconds since it powered on, and
-stores that count with every reading. The moment it reaches the internet and
-learns the real time, it subtracts backwards:
+The ESP32 can work out most timestamps by itself. It counts seconds since it
+powered on and stores that count with every reading. The moment it reaches the
+internet and learns the real time, it subtracts backwards:
 
 ```
   real time of a reading  =  time now  −  (uptime now  −  uptime when stored)
 ```
 
-Every buffered reading gets an **exact** timestamp, retroactively.
+Every buffered reading gets an exact timestamp, retroactively. **So for the
+common case — mains on, internet off — no clock chip is needed at all.**
 
-### When that is not enough
+The gap is when **mains cuts while the internet is still down.** The counter
+resets to zero, and nothing inside the ESP32 counted while it was dead. It knows
+the time is *later* than the last value it saved to flash, but not by how much.
 
-It only breaks if the device power-cycles **twice** without reaching the internet
-in between. Then the length of the gap between the two sessions is unknown.
+One power cut is recoverable: when the internet returns, the ESP32 can work out
+both the current session's times and how long the outage was. **Two or more cuts
+before the internet returns is not** — it learns the total time it lost but
+cannot split it between the individual outages, so earlier readings can sit
+hours out of place on the graph.
 
-And even then: a power cut means the house was not consuming from the grid, so
-the missing time is idle time. **The kWh total — the number the bill actually
-depends on — is never affected.** Only the shape of the daily graph goes
-slightly fuzzy, and only during a long internet outage with repeated power cuts.
+In Syrian homes, with daily power cuts and intermittent internet, that is not an
+edge case. Hence the clock chip.
 
-### What it saves
+### How it works
 
-A DS3231 clock plus its battery, holder, two pull-up resistors and a capacitor
-costs about **US$ 1.70 per device — US$ 1,700 across 1,000 units**, and adds six
-parts to a hand-assembled board.
+A DS1307 is a little watch with a **32.768 kHz crystal** as its pendulum. The
+crystal vibrates 32,768 times per second — that odd number is 2¹⁵, so the chip
+just halves it fifteen times with simple binary dividers and lands on exactly one
+tick per second.
 
-**The footprints stay on the PCB, unpopulated.** If customers ever complain that
-the daily graph looks wrong, fit a `PCF8563T` (~US$ 0.38) plus a crystal and a
-coin cell on a later batch. No PCB redesign.
+A **CR2032 coin cell** keeps it running when mains is off. At 0.84 µA that cell
+lasts **8–10 years**, and in this device it only discharges while mains is out,
+so realistically the cell's own shelf life is the limit.
 
-### Firmware rules this creates
+On every boot the ESP32 simply asks the chip what time it is, and gets the right
+answer — internet or not.
 
-1. **Store the uptime counter with every reading**, alongside the measurements.
-2. **Store a boot-session number** so the server can tell sessions apart.
-3. **The server assigns the real timestamps**, not the device.
-4. Bill from the energy counter, never from the sum of power readings.
+### Accuracy, and why ±3 seconds a day is plenty
+
+The DS1307 has no temperature compensation, so its accuracy is entirely the
+crystal's: roughly ±35 ppm, or **about 3 seconds per day**.
+
+That sounds poor next to a DS3231's ±2 ppm, and it does not matter at all. The
+ESP32 resets the clock from the internet every time it connects. **The chip's job
+is to bridge days, not years.** Paying extra for a decade of unattended accuracy
+would be buying something we throw away every time the WiFi comes back.
+
+### The two things that must be right
+
+1. **The chip runs on 5 V, but its data lines are pulled up to 3.3 V.** The
+   DS1307 needs 4.5–5.5 V, and ESP32 pins are not 5 V tolerant. Because the data
+   lines are open-drain — they can only pull down, never push up — pulling them
+   up to 3.3 V keeps the whole bus at 3.3 V. In the other direction the DS1307
+   reads anything above 2.2 V as high, so 3.3 V drives it fine.
+2. **The battery connects straight to the chip and nothing else.** No diode, no
+   resistor, no charging circuit. The chip switches over internally.
+
+Both of these are why the design uses the **bare chip, not a ready-made module**.
+The common DS1307 "Tiny RTC" module puts a resistor divider on the battery pin
+and pulls its data lines to whatever powers it; the DS3231 "blue module" has a
+trickle charger that destroys a non-rechargeable CR2032. Both are broken by
+design for this application.
+
+### Firmware rules
+
+1. **The clock chip is the source of truth**; the internet corrects it whenever
+   available.
+2. **Store the 64-bit microsecond uptime counter with every reading too** — not
+   Arduino's `millis()`, which wraps every 49.7 days. It costs nothing and gives
+   you a cross-check.
+3. **Flag every reading** as *time from internet*, *time from clock chip*, or
+   *time estimated*. Your server can then weight the data, and you learn how
+   often each case actually happens.
 
 ## 9. Storing readings when the internet is down
 

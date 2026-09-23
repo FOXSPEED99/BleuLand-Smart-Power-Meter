@@ -68,7 +68,7 @@ a time.
 
 1. **Paste, place and reflow all surface-mount parts** (29 of them).
 2. **Inspect.** Fix any bridges now while access is clear.
-3. **Hand-solder the safe-side through-hole parts:** `C2`, `J2`, `J4`, `J5`.
+3. **Hand-solder the safe-side through-hole parts:** `C2`, `Y1`, `BT1`, `J2`, `J4`, `J5`.
 4. **Hand-solder the mains parts last:** `Rv1`–`Rv4`, `T1`, `PS1`, `J1`, the fuse
    clips, `RV1`, `C1`. These are the tallest parts and the ones you least want
    to work around.
@@ -81,7 +81,8 @@ a time.
    > until the first humid coastal summer. Clean every board, inspect every
    > board.
 
-6. **Plug in the ESP32 board.**
+6. **Fit the CR2032 battery**, printed side up.
+7. **Plug in the ESP32 board.**
 
 ## 1.5 Parts that must never go through reflow
 
@@ -92,6 +93,8 @@ a time.
 | `C2` electrolytic | Will vent or degrade |
 | `J1`, `J2` terminals | Plastic melts |
 | `J4`, `J5` headers | Plastic deforms |
+| `BT1` battery holder | Plastic deforms |
+| `Y1` crystal | Through-hole, and a heat-sensitive tuning-fork part |
 | `B1` battery | **Never heat a lithium cell** |
 | `MCU1` ESP32 board | Obviously — it plugs in at the end |
 
@@ -124,7 +127,7 @@ Know what you are fighting before designing a test process.
 
 1. **Look at it** under magnification: solder bridges, especially on `U2` and
    `U2`.
-2. **Check polarity:** `C2`, `LED1`, `LED2`, `U2` leg 1.
+2. **Check polarity:** `C2`, `LED1`, `LED2`, `BT1`, `U2` leg 1, `U4` leg 1.
 3. **Rail test:** 5 V to `GROUND` must not be a short. 3.3 V to `GROUND` must not
    be a short.
 4. **⭐ Isolation test — the most important test on the board.**
@@ -153,7 +156,9 @@ at a normal bench.
 |---|---|
 | A valid 24-byte packet arrives from `U2` within 1 second | Measuring chip alive, level shifter correct, wiring good |
 | Its checksum is valid | Clean signal path |
-| The device reaches an NTP server and sets its clock | Internet path works end to end |
+| The clock chip `U4` answers on the data bus | `U4`, `Y1`, `R5`, `R6` correct |
+| The clock reports a sane time and its "oscillator stopped" flag is clear | Crystal running, battery fitted and good |
+| The device reaches an NTP server and sets the clock chip | Internet path works end to end |
 | Storage area mounts, a test record writes and reads back | Flash partition |
 | WiFi scan finds at least one network | Radio and antenna |
 | Both lights blink | `LED1`, `LED2`, `R3`, `R4` |

@@ -89,6 +89,12 @@ table tells you what to actually buy and what its legs are called.
 | `Rls2` | **2 kΩ, 1 %, 0805 resistor** | Two ends — **no polarity** |
 | `R7` | **0 Ω link, 0805** | Two ends — **no polarity** |
 | `D2` `D3` | **TVS diode SMAJ5.0CA** | Two ends — **bidirectional, so no polarity** |
+| `U4` | **DS1307Z+** clock chip, SOIC-8 (8 legs) | `VCC` (power), `GND` (ground), `X1` and `X2` (crystal), `VBAT` (battery), `SDA` and `SCL` (data lines), `SQW/OUT` (unused). ⚠️ **Get the leg numbers from the DS1307 datasheet** |
+| `Y1` | **Crystal, 32.768 kHz, 12.5 pF**, cylindrical 2 × 6 mm | Two wire legs — **no polarity** |
+| `BT1` | **CR2032 battery holder**, through-hole | **+ (positive)** — the metal cup the battery sits in. **− (negative)** — the small tab that touches the battery's underside |
+| `B1` | **CR2032 battery, 3 V** | Not soldered — it clips into `BT1`. Printed side (`+`) faces up |
+| `R5` `R6` | **4.7 kΩ, 1 %, 0805 resistors** | Two ends — **no polarity** |
+| `C13` | **Ceramic capacitor, 100 nF, 0805** | Two ends — **no polarity** |
 | `MCU1` | **ESP32 development board** ("ESP32 Type-C", 30 pins) | **Printed on the board itself:** `VIN`, `GND`, `3V3`, `D16`, `D21`, `D22`, `D25`, `D26` |
 | `J4` `J5` | **1 × 15 female header strips** | 15 holes each — the ESP32 board plugs in |
 | `LED1` | **Green LED, 0805** | **Anode (+)** and **cathode (−)**. ⚠️ The cathode marking differs between makers — test one with a battery and a resistor before soldering a hundred |
@@ -425,7 +431,7 @@ so that:
       └─────────────────────────────────┘
 ```
 
-Only **7 of the 30 pins** are used. The rest are simply not connected.
+Only **9 of the 30 pins** are used. The rest are simply not connected.
 
 | # | ESP32 pin *(as printed on the board)* | Connect to | Why |
 |---|---|---|---|
@@ -434,15 +440,14 @@ Only **7 of the 30 pins** are used. The rest are simply not connected.
 | **F3** | **`GND`** *(the other one)* | `GROUND` | Second ground, for stability |
 | **F4** | **`3V3`** | Junction 3.3 VOLTS | Feeds the analog filtering |
 | **F5** | **`D16`** | Junction DATA 3.3 V | Reads the measuring chip |
-| **F6** | **`D25`** | **Resistor** `R3` — either end | Drives the green light |
-| **F7** | **`D26`** | **Resistor** `R4` — either end | Drives the blue light |
+| **F6** | **`D21`** | Junction CLOCK DATA | Talks to the clock chip |
+| **F7** | **`D22`** | Junction CLOCK SIGNAL | Talks to the clock chip |
+| **F8** | **`D25`** | **Resistor** `R3` — either end | Drives the green light |
+| **F9** | **`D26`** | **Resistor** `R4` — either end | Drives the blue light |
 
 **Leave completely unconnected:** `D2`, `D4`, `D5`, `D12`, `D13`, `D14`, `D15`,
-`D17`, `D18`, `D19`, `D21`, `D22`, `D23`, `D27`, `D32`, `D33`, `D34`, `D35`,
-`VP`, `VN`, `EN`, `RX0`, `TX0`.
-
-> `D21` and `D22` are deliberately left free. They are the two pins a clock chip
-> would use if you ever decide to fit one — see Section H.
+`D17`, `D18`, `D19`, `D23`, `D27`, `D32`, `D33`, `D34`, `D35`, `VP`, `VN`, `EN`,
+`RX0`, `TX0`.
 
 ### What we get for free from this board
 
@@ -484,38 +489,116 @@ can read it. Drill a small hole in the enclosure above it.
 
 ---
 
-# SECTION H — Optional clock chip (footprint only, do not fit)
+# SECTION H — The clock chip
 
-**Leave these footprints on the PCB but do not populate them.** They cost nothing
-to include and they keep an option open.
+`U4` is a **DS1307Z+**. Its only job is to keep the time running while the device
+is switched off, so that readings stored during an internet outage still get
+correct timestamps.
 
-### Why there is no clock chip
+```
+   5 VOLTS ──┬──────────── U4 "VCC"          Y1 (crystal)
+             │                                ┌───────┐
+            C13                    U4 "X1" ───┤ 32.768│
+             │                     U4 "X2" ───┤  kHz  │
+   GROUND ───┴──────────── U4 "GND"           └───────┘
 
-When the mains comes back after a cut but the internet is still down, the device
-does not know what time it is. That sounds like it needs a clock — but the ESP32
-solves it by itself.
+   3.3 VOLTS ──[R5 4.7k]──┬── U4 "SDA" ── MCU1 "D21"
+   3.3 VOLTS ──[R6 4.7k]──┴── U4 "SCL" ── MCU1 "D22"
 
-The ESP32 counts seconds since it powered on. It stores that count with every
-reading. The moment it finally reaches the internet and learns the real time, it
-subtracts backwards and gives every stored reading an **exact** timestamp.
+   U4 "VBAT" ──────────── BT1 "+"   (battery)
+                          BT1 "−" ── GROUND
+```
 
-That only breaks if the device power-cycles **twice** without reaching the
-internet in between. And even then, a power cut means the house was not
-consuming, so **the kWh total — the number the bill depends on — is never
-affected.** Only the shape of the daily graph gets slightly fuzzy.
+| # | From | To |
+|---|---|---|
+| **H1** | **DS1307** `U4` — the leg marked **`VCC`** | **Junction "5 VOLTS"** |
+| **H2** | **DS1307** `U4` — the leg marked **`GND`** | **`GROUND`** |
+| **H3** | **DS1307** `U4` — the leg marked **`X1`** | **Crystal** `Y1` — either leg |
+| **H4** | **DS1307** `U4` — the leg marked **`X2`** | **Crystal** `Y1` — its other leg |
+| **H5** | **DS1307** `U4` — the leg marked **`VBAT`** | **Battery holder** `BT1` — the **+ (positive)** terminal |
+| **H6** | **Battery holder** `BT1` — the **− (negative)** terminal | **`GROUND`** |
+| **H7** | **DS1307** `U4` — the leg marked **`SDA`** | **Junction "CLOCK DATA"** |
+| **H8** | Junction CLOCK DATA | **Resistor** `R5` (4.7 kΩ) — either end |
+| **H9** | Junction CLOCK DATA | **ESP32 board** `MCU1` — the pin marked **`D21`** |
+| **H10** | **DS1307** `U4` — the leg marked **`SCL`** | **Junction "CLOCK SIGNAL"** |
+| **H11** | Junction CLOCK SIGNAL | **Resistor** `R6` (4.7 kΩ) — either end |
+| **H12** | Junction CLOCK SIGNAL | **ESP32 board** `MCU1` — the pin marked **`D22`** |
+| **H13** | **Resistor** `R5` — its other end | **Junction "3.3 VOLTS"** |
+| **H14** | **Resistor** `R6` — its other end | **Junction "3.3 VOLTS"** |
+| **H15** | **Ceramic capacitor** `C13` (100 nF) — either end | **Junction "5 VOLTS"** |
+| **H16** | **Ceramic capacitor** `C13` — its other end | **`GROUND`** |
 
-**A clock chip costs US$ 1.70 per device. Not fitting it saves US$ 1,700 across
-1,000 units.**
+The chip's `SQW/OUT` leg is **not connected** — we don't use it.
 
-### If you ever decide you want it
+## ⚠️ Four rules for this section
 
-Put a **PCF8563T** (SOP-8, ~US$ 0.38) footprint on `D21`/`D22`, plus a
-32.768 kHz crystal, a CR2032 holder, two 4.7 kΩ resistors and a 100 nF capacitor.
-Add it on a later production batch with no PCB change at all.
+### 1. The chip runs on 5 V, but the pull-ups go to 3.3 V
 
-Do **not** use a DS3231 — it is a ±2 ppm temperature-compensated part designed to
-stay accurate for years with no correction. We correct from the internet
-constantly, so that precision is wasted money.
+This is the single most important thing on this page.
+
+The DS1307 needs **4.5–5.5 V** to work, so `VCC` goes to the 5 V rail. But
+**ESP32 pins are not 5 V tolerant.**
+
+The trick is that the DS1307's data lines are **open-drain** — they can only pull
+a line *down*, never push it up. So whatever voltage you pull the lines up to is
+the highest voltage the bus ever reaches. Pull them up to **3.3 V** and the bus
+never exceeds 3.3 V, no matter that the chip runs on 5 V.
+
+And in the other direction: the DS1307 treats anything above **2.2 V** as a logic
+high, so the ESP32's 3.3 V signals drive it comfortably.
+
+> **`R5` and `R6` must go to the 3.3 VOLTS junction. Never to 5 VOLTS.** Getting
+> this wrong puts 5 V onto the ESP32's pins. It may appear to work for a while
+> and then fail — which is worse than failing immediately. This is exactly what
+> destroys ESP32s on cheap DS1307 modules, where the pull-ups go to whatever
+> powers the module.
+
+### 2. The battery connects directly — nothing else on that wire
+
+`VBAT` connects to the battery holder's positive terminal and **to nothing
+else.** No diode. No resistor. No charging circuit.
+
+The DS1307 switches to the battery internally, all by itself, when mains goes
+away. That is what the `VBAT` leg is for.
+
+> **This is why we use the bare chip and not a module.** The "Tiny RTC" DS1307
+> module puts a resistor divider on this pin (because it ships with a 3.6 V
+> rechargeable cell) — the DS1307 datasheet is explicit that the battery must
+> connect with **0 Ω** in series. And the DS3231 "blue module" has a trickle
+> charger that will cook a non-rechargeable CR2032. Both are broken by design
+> for our purposes.
+
+**A CR2032 here lasts 8–10 years** — the chip draws 0.84 µA in timekeeping mode,
+and in this device the battery is only used while mains is off.
+
+### 3. The crystal must be 12.5 pF, and needs no capacitors
+
+The DS1307's load capacitors are **inside the chip**. You connect the crystal
+straight to `X1` and `X2` and **add nothing else** — no capacitors, no resistors.
+
+But the crystal must be the matching type: **32.768 kHz with 12.5 pF load
+capacitance.** A 6 pF crystal (which the DS1302 uses) would make the clock run
+minutes per day slow.
+
+### 4. Layout: keep the crystal close and quiet
+
+Place `Y1` **within 5 mm** of the `X1`/`X2` legs, with a ground pour around it,
+and route nothing underneath on either layer. A 32.768 kHz oscillator is a
+low-energy circuit and it picks up noise easily.
+
+## Why we bothered
+
+The ESP32 counts seconds since it powered on, so if it never loses power it can
+work out the time of every stored reading once the internet returns. But when
+mains cuts, that counter resets and it has no way to know how long it was off.
+
+The DS1307 is a little watch with its own battery that **keeps ticking while
+everything else is dead.** On boot, the ESP32 asks it what time it is and gets
+the right answer straight away — internet or not.
+
+Accuracy comes entirely from the crystal, roughly **±3 seconds per day**, and the
+ESP32 resets it from the internet whenever it can. That is far more than enough:
+its job is to bridge days, not years.
 
 ---
 
@@ -532,10 +615,10 @@ Every junction in the design, and everything attached to it.
 | **DIVIDER B** ⚠️ | `Rv2`, `Rv3` |
 | **DIVIDER C** ⚠️ | `Rv3`, `Rv4` |
 | **DIVIDER D** ⚠️ | `Rv4`, `T1` primary |
-| **5 VOLTS** | `PS1` `+Vo`, `C2` **+**, `C3`, `FB1`, `MCU1` `VIN` |
+| **5 VOLTS** | `PS1` `+Vo`, `C2` **+**, `C3`, `FB1`, `MCU1` `VIN`, `U4` `VCC`, `C13` |
 | **5 VOLTS CLEAN** | `FB1`, `C7`, `C8`, `U2` `VDD` |
-| **3.3 VOLTS** | `MCU1` `3V3`, `C5`, `C6` |
-| **GROUND** | `PS1` `-Vo`, `C2` **−**, `C3`, `C5`, `C6`, `MCU1` `GND` ×2, `LED1` −, `LED2` −, `Rls2`, `R7` |
+| **3.3 VOLTS** | `MCU1` `3V3`, `C5`, `C6`, `R5`, `R6` |
+| **GROUND** | `PS1` `-Vo`, `C2` **−**, `C3`, `C5`, `C6`, `MCU1` `GND` ×2, `LED1` −, `LED2` −, `Rls2`, `R7`, `U4` `GND`, `C13`, `BT1` **−** |
 | **ANALOG GROUND** | `U2` `GND`, `C7`, `C8`, `T1` secondary, `Rv5`, `D3`, `Cf1`, `J2` second screw, `Rb`, `D2`, `Rf3`, `Cf3`, `Cf4`, `R7` |
 | **VOLTAGE SIGNAL** | `T1` secondary, `Rv5`, `D3`, `Rf1` |
 | **VOLTAGE FILTERED** | `Rf1`, `Cf1`, `U2` `V1P` |
@@ -544,10 +627,15 @@ Every junction in the design, and everything attached to it.
 | **CURRENT −** | `Rf3`, `Cf2`, `Cf4`, `U2` `I1N` |
 | **DATA 5 V** | `U2` `TX`, `Rls1` |
 | **DATA 3.3 V** | `Rls1`, `Rls2`, `MCU1` `D16` |
+| **CLOCK DATA** | `U4` `SDA`, `R5`, `MCU1` `D21` |
+| **CLOCK SIGNAL** | `U4` `SCL`, `R6`, `MCU1` `D22` |
+| **BATTERY** | `U4` `VBAT`, `BT1` **+** |
+| **CRYSTAL A** | `U4` `X1`, `Y1` one leg |
+| **CRYSTAL B** | `U4` `X2`, `Y1` other leg |
 | **GREEN LIGHT** | `MCU1` `D25` → `R3` → `LED1` **+** |
 | **BLUE LIGHT** | `MCU1` `D26` → `R4` → `LED2` **+** |
 
-**21 junctions. That is the entire circuit.**
+**26 junctions. That is the entire circuit.**
 
 ---
 
@@ -569,8 +657,11 @@ Every junction in the design, and everything attached to it.
 - [ ] `C2` electrolytic is the right way round (stripe = negative)
 - [ ] `LED1` and `LED2` are the right way round
 - [ ] `D2` and `D3` are fitted (no direction, but they must be there)
-- [ ] `U2` leg 1 matches the marking on the board
-- [ ] No solder bridges anywhere, especially on `U2`
+- [ ] `U2` and `U4` leg 1 match the markings on the board
+- [ ] `BT1` battery holder is the right way round (+ cup, − tab)
+- [ ] **`R5` and `R6` go to 3.3 VOLTS, not to 5 VOLTS** — trace them with a meter
+- [ ] **Nothing but `BT1` **+** touches `U4` `VBAT`** — no diode, no resistor
+- [ ] No solder bridges anywhere, especially on `U2` and `U4`
 - [ ] **The safety slot across the board is clean** — no solder, no flux, no bent
       component lead crossing it
 - [ ] Nothing on the mains side comes within 8 mm of the safe side
@@ -582,6 +673,7 @@ Every junction in the design, and everything attached to it.
 - [ ] `MCU1` `3V3` measures **3.25 – 3.35 V**
 - [ ] The green light comes on
 - [ ] The device appears on USB when you plug a cable in
+- [ ] The clock chip answers, and reports a sensible time after you set it
 
 ---
 

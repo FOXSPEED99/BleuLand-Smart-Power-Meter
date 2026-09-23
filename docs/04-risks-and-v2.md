@@ -114,12 +114,13 @@ module. Board makers change the regulator, the USB chip, sometimes the pin order
 
 ## 1.8 🟡 Counterfeit parts
 
-Buying from open markets means you will eventually receive fakes. The two most
+Buying from open markets means you will eventually receive fakes. The three most
 commonly faked items here:
 
 | Part | What goes wrong | How to check |
 |---|---|---|
 | **ESP32 boards** | Remarked flash size, refurbished modules | `esptool flash_id` reports the truth. Make it part of your self-test |
+| **DS1307 clock** | Remarked or clone parts that drift badly | Run three samples for a week against a reference. A genuine one loses a few seconds; a fake loses minutes |
 | **Current clamps** | Wildly variable ratio between batches; cores that do not close properly | Measure the ratio on 5 pieces per batch with a known current. Reject the batch if they disagree by more than 2 % |
 
 ⚠️ **The X2 capacitor and the MOV are safety parts.** A counterfeit there is a
@@ -265,7 +266,51 @@ Do not assume today's analysis still holds:
 
 ---
 
-# Part 3 — Decisions still open
+# Part 3 — Decisions already settled (do not re-open these)
+
+## 3.1 The clock chip — why DS1307 and not the others
+
+This one was investigated at length. The conclusion is recorded here so nobody
+starts again from scratch in six months.
+
+**The question:** the ESP32 can work out timestamps by itself as long as it never
+loses power. When mains cuts *during* an internet outage, its counter resets. One
+power cut is recoverable; two or more before the internet returns is not. In
+Syrian homes that is common enough to matter.
+
+**What was evaluated:**
+
+| Option | Why it was rejected |
+|---|---|
+| **No clock chip at all** | Works for the common case (mains on, internet off) but leaves the daily graph hours out of place after repeated power cuts |
+| DS3231 "blue module" | Has a trickle charger that destroys a non-rechargeable CR2032 |
+| DS1307 "Tiny RTC" module | Ships with a rechargeable LIR2032 that dies in ~2 years; puts a **resistor divider on the battery pin**, which the DS1307 datasheet forbids; pull-ups go to whatever powers it |
+| **DS1302** chip | Needs a **6 pF** crystal. Essentially every cheap 32.768 kHz crystal is 12.5 pF — could not source the right one |
+| **MCP7940N** chip | Needs **external load capacitors** → 9 parts instead of 7 |
+| **PCF8563** chip | **No battery pin** — needs two Schottky diodes to switch supplies → 9 parts |
+| **DS3231M / MZ** | Assumed cheaper than the DS3231SN. It is not — $2.02 to $6.55 against ~$1.50 |
+| DS3231SN chip | Excellent, 6 parts, no crystal — but ~$0.46/device more than the DS1307 |
+
+**Chosen: the bare DS1307Z+ chip.** 7 parts, ~$1.25/device, internal load
+capacitors so the crystal connects directly, and a proper battery pin with
+automatic switchover.
+
+**The three things that make it work:**
+
+1. **Pull-ups to 3.3 V, never 5 V.** The chip runs on 5 V but its data lines are
+   open-drain, so the pull-up voltage sets the bus voltage. This is what protects
+   the ESP32 — and it is exactly what cheap modules get wrong.
+2. **Crystal must be 12.5 pF**, with no external capacitors (they are inside the
+   chip).
+3. **Battery straight to the battery pin, nothing else on that wire.**
+
+**What was accepted:** ±3 seconds/day of drift, against the DS3231's ±2 ppm. It
+does not matter — the internet resets the clock every time it connects. The
+chip's job is to bridge days, not years.
+
+---
+
+# Part 4 — Decisions still open
 
 | # | Decision | Recommendation | When |
 |---|---|---|---|

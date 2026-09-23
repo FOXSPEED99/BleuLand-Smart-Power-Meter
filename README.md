@@ -78,8 +78,8 @@ work that protects the entire production run.
   LIVE ──[fuse]──┬────┼──► ZMPT ──► HLW8032 ──UART──► ESP32 ──► WiFi
                  │    │    (volts)   (measures)  5→3.3V  BOARD
   NEUTRAL ───────┼────┼──► ZMPT ──►     │                 │
-                 │    │                 │
-                 └────┼──► HLK-PM01 ──► 5 V
+                 │    │                 │              DS1307
+                 └────┼──► HLK-PM01 ──► 5 V             (clock)
                       │    (isolated)
       ⚡ MAINS ⚡      │         SAFE TO TOUCH
                       └────────────────────────────────┘
@@ -101,8 +101,8 @@ safe to probe, and safe to plug a USB cable into while the device is running.
 | Reports | Volts, amps, watts, power factor, kWh — every minute |
 | Offline storage | Keeps ~40 days of readings if the internet drops |
 | Board | 2-layer, ~60 × 55 mm |
-| Parts | **44 per device, 30 different items to order** |
-| Cost | **≈ US$ 12.62 per device** at 1,000 units |
+| Parts | **51 per device, 35 different items to order** |
+| Cost | **≈ US$ 13.87 per device** at 1,000 units |
 | Assembly | Hand-solderable throughout — no fine-pitch parts |
 
 ---

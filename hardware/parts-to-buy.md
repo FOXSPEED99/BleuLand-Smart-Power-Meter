@@ -127,7 +127,7 @@ These five sit in the measuring path. Whatever they do, the reading does.
 | # | Value | **Type you must buy** | Per device | **Order** | Board labels |
 |---|---|---|---|---|---|
 | 20 | **0.68 Ω** | **Current-sense chip resistor, 1 %, ≤100 ppm/°C** (≤50 ppm better), 1206 or 0805 | 1 | **1,100** | Rb |
-| 21 | **150 Ω** | 1 %, **≤50 ppm/°C**, thin film, 0805 | 1 | **1,100** | Rv5 |
+| 21 | **150 Ω** | 1 %, ordinary 0805 — see the note below | 1 | **1,100** | Rv5 |
 | 22 | **1.5 kΩ** | 1 %, ≤100 ppm/°C, 0805, **both from the same reel** | 2 | **2,200** | Rf2, Rf3 |
 | 23a | 1 kΩ | 1 %, ≤100 ppm/°C, 0805 | 1 | **1,100** | Rf1 |
 
@@ -143,6 +143,13 @@ explanation below before you buy it.
 **`Rf2` and `Rf3` must be a matched pair.** Buy them on one reel, fit them from
 the same reel. Their *exact* value matters less than the fact that they are the
 same as each other.
+
+**`Rv5` does not need a special low-drift part**, even though it is in the
+measuring path. The voltage reading depends on the **ratio** `Rv5 ÷ (the four
+47 kΩ)`, not on `Rv5` alone. Both sides drift upward together when the panel
+warms, so most of the drift cancels in the division. An ordinary 1 % chip
+resistor is fine here. `Rb` has no partner to cancel against — which is exactly
+why it is the one part that needs the good specification.
 
 ### 7b. The mains resistors — safety critical
 
@@ -272,6 +279,102 @@ units**. With an iron only, the two are about the same speed.
 | Rf1, Rf2, Rf3 | 0805, 1 %, one reel each value |
 | Rv1–Rv4 (47 kΩ) | **Through-hole metal film, ½ W, 1 %** |
 | Rls1, Rls2, R3, R4, R5, R6, R7 | Anything you have — through-hole ½ W is fine |
+
+### 7d. Exact parts to order — click and buy
+
+Every part below is a **JLCPCB "Basic" part**: LCSC keeps them in stock in
+millions, they are the cheapest grade, and they never go end-of-life. All are
+UNI-ROYAL (Uniroyal Elec) thick film, ±1 %, ±100 ppm/°C, 1/8 W, 0805.
+
+| Board label | Value | LCSC part | Buy link | **Order** | ~Price each |
+|---|---|---|---|---|---|
+| Rf1, Rls1, R3, R4 | 1 kΩ | **C17513** | [lcsc.com/product-detail/C17513.html](https://www.lcsc.com/product-detail/C17513.html) | **4,200** | $0.0027 |
+| Rf2, Rf3 | 1.5 kΩ | **C4310** | [lcsc.com/product-detail/C4310.html](https://www.lcsc.com/product-detail/C4310.html) | **2,200** | $0.0038 |
+| Rls2 | 2 kΩ | **C17604** | [lcsc.com/product-detail/C17604.html](https://www.lcsc.com/product-detail/C17604.html) | **1,100** | $0.0028 |
+| R5, R6 | 4.7 kΩ | **C17673** | [lcsc.com/product-detail/C17673.html](https://www.lcsc.com/product-detail/C17673.html) | **2,100** | $0.0027 |
+| Rv5 | 150 Ω | **C17471** | [lcsc.com/product-detail/C17471.html](https://www.lcsc.com/product-detail/C17471.html) | **1,100** | $0.0028 |
+| R7 | 0 Ω link | **C17477** | [lcsc.com/product-detail/C17477.html](https://www.lcsc.com/product-detail/C17477.html) | **1,100** | $0.0029 |
+
+**That is about US$ 35 for all the ordinary resistors in 1,000 devices.**
+
+Two positions are not on that list, because they are the two that cannot be a
+generic chip resistor:
+
+#### Rv1–Rv4 — the 47 kΩ mains chain
+
+Buy **through-hole metal film, 1 %, 47 kΩ**, ½ W preferred. Each one only has to
+dissipate 0.07 W, so ¼ W is electrically fine too — ½ W just gives a longer body
+and more surge margin.
+
+- **LCSC, ¼ W:** TyoHM `RN 1/4W 47K F T/B A1` — **C410613**, ±1 %, **±50 ppm/°C**,
+  D2.4 × L6.5 mm →
+  [lcsc.com/product-detail/C410613.html](https://www.lcsc.com/product-detail/C410613.html)
+- **LCSC, ½ W:** the same TyoHM RN series in `RN1/2WS…` form. Browse
+  [Through Hole Resistors → Metal Film](https://www.lcsc.com/category/1203.html)
+  and filter for 47 kΩ, ±1 %.
+
+⚠️ **LCSC stock on through-hole resistors is thin — often only a few thousand
+pieces.** You need 4,200. This is the one resistor to **buy locally in
+Syria/Lebanon**: 47 kΩ ½ W metal film is a commodity everywhere. Just make sure
+it is **metal film (blue body)** and **not carbon film (beige body)**.
+
+#### Rb — the 0.68 Ω burden resistor
+
+This is the part with no single obvious catalogue number, so you have three
+routes. Decide after the prototype sweep tells you the real value.
+
+**Route 1 — one current-sense chip resistor (best, do this if you can).**
+Open LCSC's
+[Current Sense Resistors category](https://www.lcsc.com/category/1336.html)
+and filter: **Resistance 0.68 Ω · Tolerance ±1 % · Package 1206 · TCR ≤100 ppm/°C**.
+Confirm the stock covers 1,100 pieces before you commit. Look for Yageo PE / RL,
+Stackpole CSR / CSRN, Ever Ohms, or UNI-ROYAL low-ohm series.
+
+**Route 2 — through-hole metal film.** LCSC lists
+`MF1/4W-0.68Ω±1% T` from CCO (Chian Chia Elec) as **C119261** →
+[lcsc.com/product-detail/C119261.html](https://www.lcsc.com/product-detail/C119261.html).
+**Check its temperature coefficient on the page before buying** — metal film at
+this low a value is sometimes only ±250 ppm/°C, which is not good enough.
+
+**Route 3 — two ordinary chip resistors in parallel (guaranteed available).**
+
+> **1 Ω ∥ 2.2 Ω = 0.6875 Ω** — that is **within 1 % of 0.68 Ω**.
+
+| Part | Value | LCSC | Buy link | **Order** |
+|---|---|---|---|---|
+| Rb-a | 1 Ω 0805 1 % | **C25271** | [C25271](https://www.lcsc.com/product-detail/C25271.html) | **1,100** |
+| Rb-b | 2.2 Ω 0805 1 % | **C17521** | [C17521](https://www.lcsc.com/product-detail/C17521.html) | **1,100** |
+
+Both are Basic parts and always in stock. Two footprints instead of one, both
+±100 ppm/°C, and the current divides between them automatically because 2 Ω is
+enormous compared to any track resistance. **If Route 1 has no stock, build the
+PCB with two pads side by side so either route drops in.**
+
+> **Design tip:** lay out `Rb` as **two 1206 pads in parallel** from the start.
+> Fit one current-sense resistor across one pair, or two ordinary resistors
+> across both. That single decision removes the sourcing risk permanently.
+
+#### Prototype sweep parts
+
+For finding the right values on the first 10 boards, tolerance and temperature
+coefficient **do not matter** — you are only hunting the value. Buy the cheap
+ordinary parts:
+
+| For | Values | LCSC parts |
+|---|---|---|
+| `Rf2`/`Rf3` timing | 820 Ω / 1.2 kΩ / **1.5 kΩ** / 1.8 kΩ / 2.2 kΩ | C17837 · C17379 · C4310 · C17398 · C17520 |
+| `Rv5` voltage range | 62 Ω … 470 Ω | search LCSC 0805 1 % by value |
+| `Rb` clamp range | 0.47 Ω … 1.0 Ω | 1 Ω is **C25271**; for the sub-ohm values buy a cheap assorted SMD low-ohm kit from AliExpress |
+
+Buy **20 of each** sweep value. The whole sweep is under US$ 15.
+
+#### Before you place a 4,200-piece order
+
+LCSC part numbers are stable, but **stock and price are not**. On each product
+page check: the **value and tolerance in the title match**, the **stock covers
+your quantity**, and the **price break** — most of these drop sharply at 1,000+
+pieces. Order the whole quantity in one go; a second reel from a different batch
+is a different batch.
 
 ## 8. Capacitors
 

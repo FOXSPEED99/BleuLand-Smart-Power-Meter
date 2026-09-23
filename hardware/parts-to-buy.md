@@ -378,16 +378,94 @@ is a different batch.
 
 ## 8. Capacitors
 
-| # | Value | Per device | **Order** | Board labels |
-|---|---|---|---|---|
-| 27 | 100 nF X7R 50 V, 0805 | 4 | **4,200** | C3, C6, C8, C13 |
-| 28 | 10 µF X7R 16 V, 0805 | 2 | **2,100** | C5, C7 |
-| 29 | 33 nF X7R 50 V, 0805 | 2 | **2,100** | Cf1, Cf2 |
-| 30 | 10 nF X7R 50 V, 0805 | 2 | **2,100** | Cf3, Cf4 |
+### The parts and where to buy them
+
+| # | Value | Dielectric | LCSC | Buy link | Per device | **Order** | Board labels |
+|---|---|---|---|---|---|---|---|
+| 27 | 100 nF 50 V 0805 | **X7R** | **C49678** | [C49678](https://www.lcsc.com/product-detail/C49678.html) | 4 | **4,200** | C3, C6, C8, C13 |
+| 28 | 10 µF 25 V 0805 | **X5R** | **C15850** | [C15850](https://www.lcsc.com/product-detail/C15850.html) | 2 | **2,100** | C5, C7 |
+| 29 | 33 nF 50 V 0805 | **X7R** | **C1739** | [C1739](https://www.lcsc.com/product-detail/C1739.html) | 2 | **2,100** | Cf1, Cf2 |
+| 30 | 10 nF 50 V 0805 | **X7R** | **C1710** | [C1710](https://www.lcsc.com/product-detail/C1710.html) | 2 | **2,100** | Cf3, Cf4 |
+
+About **US$ 0.15 of capacitors per board** — roughly US$ 155 for 1,000 devices
+at single-unit prices, less at volume.
 
 ⚠️ Buy **all the filter capacitors (#29, #30) from one batch**. Their consistency
 matters more than their exact value, because the timing correction is tuned
 around whatever they actually are.
+
+⚠️ **#29 has the thinnest stock of the four** (tens of thousands, not millions).
+Check it covers your quantity before ordering.
+
+### The specification that is easy to miss: the dielectric
+
+A capacitor's marking (`104`, `333`) tells you the **value only**. It tells you
+nothing about the **dielectric**, which is the material inside — and that decides
+whether the value stays what it says.
+
+| Dielectric | Change over temperature | Use it for |
+|---|---|---|
+| **C0G / NP0** | ±0.3 % | The best, but only available in small values |
+| **X7R** | ±15 % from −55 to +125 °C | **What we specify** |
+| **X5R** | ±15 % from −55 to **+85 °C** | Fine for bulk energy storage |
+| **Y5V** | **+22 % / −82 %** | **Never on this board** |
+| **Z5U** | **+22 % / −56 %** | **Never on this board** |
+
+**Y5V is the trap.** It is cheap, it is extremely common in unlabelled bags and
+in generic through-hole yellow capacitors, and the marking looks identical. A
+Y5V part can lose **over 80 % of its value** when hot — and it also loses
+capacitance when you apply voltage to it, on top of that.
+
+**Why that destroys this particular design:** `Cf1`–`Cf4` are not there to smooth
+anything. They set the **timing** of the voltage and current channels, and the
+whole phase correction (`Rf2` = `Rf3` = 1.5 kΩ) is tuned around their value. If
+they drift apart when the panel warms up, the two channels stop lining up, the
+power-factor calculation goes wrong, and the bill is wrong. **Like the resistor
+temperature coefficient, this cannot be calibrated out** — it moves during the
+day, every day.
+
+### Can we use through-hole capacitors instead?
+
+The little yellow dipped ceramics with two legs. Value-wise they are the same
+part. Two reasons to keep the SMD ones anyway:
+
+**1. You usually cannot tell what dielectric they are.** Generic yellow dipped
+ceramics are very often Y5V or Z5U, and the seller frequently does not say.
+The SMD parts above state X7R in the part number itself
+(`CC0805KRX7R9BB104`) — no guessing.
+
+**2. Legs are inductance.** `C3`, `C6`, `C8` and `C13` are **decoupling**
+capacitors. Their entire job is to sit as close to a chip's power pin as
+physically possible, with the smallest possible loop. A radial capacitor with
+5 mm legs adds several nanohenries in series, which is exactly the thing
+decoupling exists to remove. Same argument as the filter resistors in section 7.
+
+**Verdict by position:**
+
+| Position | Through-hole acceptable? |
+|---|---|
+| `Cf1`, `Cf2`, `Cf3`, `Cf4` (filter) | **No.** Accuracy depends on these. SMD X7R only. |
+| `C3`, `C6`, `C8`, `C13` (decoupling) | **Strongly discouraged.** Lead inductance defeats the purpose. |
+| `C5`, `C7` (10 µF bulk) | **Yes**, if it is genuinely X7R or X5R at 16 V or more. |
+
+At **US$ 0.15 a board**, this is not a place to economise.
+
+### ⚠️ The dangerous one — never substitute the X2 capacitor
+
+Item **#15** in section 5 is a **100 nF X2 safety capacitor, 275 VAC**. It sits
+directly across live and neutral.
+
+A yellow through-hole ceramic marked `104` is **also** 100 nF. **They are not
+interchangeable, and confusing them can start a fire.**
+
+| | X2 safety capacitor | Ordinary 100 nF ceramic |
+|---|---|---|
+| Rated for | Continuous mains, 275 VAC, surge tested | A few tens of volts DC |
+| When it fails | **Open** — circuit goes quiet | **Short** — becomes a wire |
+| Across live and neutral, a short is | — | **A fire** |
+
+**Rule: nothing goes across the mains unless the part itself is printed `X2`
+and `275VAC`.** Same marking, completely different component.
 
 ## 9. Everything else
 

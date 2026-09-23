@@ -1,4 +1,4 @@
-# Reading resistor markings
+# Reading resistor and capacitor markings
 
 **Who this is for:** anyone ordering parts or checking a bag of components on the
 assembly bench.
@@ -159,6 +159,57 @@ gold). **Four bands means it is the wrong part** — see section 7b of the parts
 list for why these must be metal film.
 
 ---
+
+---
+
+## Capacitor markings
+
+Capacitors use **the same 3-digit system** as resistors — with one difference
+that changes everything:
+
+> **A resistor code is in ohms. A capacitor code is in PICOfarads.**
+
+First two digits = the number, third digit = how many zeros, answer in pF.
+
+| Marking | Working | Value | Also written |
+|---|---|---|---|
+| `103` | 10, 3 zeros → 10,000 pF | **10 nF** | 0.01 µF |
+| `333` | 33, 3 zeros → 33,000 pF | **33 nF** | 0.033 µF |
+| `104` | 10, 4 zeros → 100,000 pF | **100 nF** | 0.1 µF |
+| `106` | 10, 6 zeros → 10,000,000 pF | **10 µF** | — |
+| `473` | 47, 3 zeros → 47,000 pF | **47 nF** | 0.047 µF |
+| `220` | 22, 0 zeros → 22 pF | **22 pF** | — |
+
+A letter after the digits is the tolerance: `K` = ±10 %, `M` = ±20 %,
+`J` = ±5 %. So `104K` is 100 nF ±10 %.
+
+### ⚠️ The marking does NOT tell you the dielectric
+
+This is the most important thing on this page. `104` on a good X7R capacitor and
+`104` on a rubbish Y5V capacitor look **exactly the same**, and one of them loses
+**over 80 % of its value** when the breaker panel gets hot.
+
+You cannot see it, measure it on the bench at room temperature, or read it off
+the body. **The only place it is written is the part number and the datasheet.**
+
+> `CC0805` `K` `R` `X7R` `9BB` `104`
+>
+> Yageo puts it in the middle of the part number in plain text: **X7R**.
+
+**So: buy capacitors by LCSC part number, never from an unlabelled bag.** For
+this board the four numbers are **C49678**, **C15850**, **C1739**, **C1710**.
+See section 8 of the parts list for which goes where and why.
+
+### ⚠️ And the marking does NOT tell you the voltage rating
+
+An X2 mains safety capacitor and an ordinary ceramic can both be marked `104`.
+They are completely different components:
+
+- The **X2** part is printed with **`X2`** and **`275VAC`** on its body, and
+  fails **open**.
+- The ordinary ceramic fails **short** — across live and neutral, that is a fire.
+
+**Nothing goes across the mains unless the part itself says `X2` and `275VAC`.**
 
 ## The workshop rule
 

@@ -13,7 +13,7 @@ No,Group,Item,Specification,Package,Board label,Per device,For 1000 devices,ORDE
 12,Safety,Fuse 250mA slow-blow,250 VAC rated 5x20mm glass,5x20mm,F1,1,1000,1100,Local,MUST be 250VAC and slow-blow (marked T). NEVER an SMD fuse - most are 63V only.
 13,Safety,Fuse clips for 5x20mm,PCB mount,THT,FH1,2,2000,2100,Local,Two clips hold one fuse.
 14,Safety,Surge protector (MOV) 14D471K,470V varistor 14mm disc,THT,RV1,1,1000,1050,Local / LCSC,Goes AFTER the fuse. Do NOT use a 275V or 390V part - it will overheat on normal mains.
-15,Safety,X2 safety capacitor 100nF,275 VAC X2 class,THT box,C1,1,1000,1050,Local / LCSC,CLASS X2 IS MANDATORY. A normal ceramic capacitor here is a fire risk.
+15,Safety,X2 safety capacitor 100nF,275 VAC X2 class,THT box,C1,1,1000,1050,Local / LCSC,CLASS X2 IS MANDATORY. An ordinary 100nF ceramic carries the SAME 104 marking but fails SHORT instead of open - across the mains that is a fire. The part itself must be printed X2 and 275VAC.
 16,Safety,TVS diode SMAJ5.0CA,5V BIDIRECTIONAL,DO-214AC (SMA),"D2, D3",2,2000,2100,LCSC / local,Must be bidirectional - the signal is AC.
 17,Connector,Screw terminal 2-pin 5.08mm,300V 10A,5.08mm,J1,1,1000,1050,Local,Mains live and neutral in.
 18,Connector,Screw terminal 2-pin 3.5mm,Low voltage,3.5mm,J2,1,1000,1050,Local,CT clamp in. Deliberately a different size from J1 so mains cannot be wired here.
@@ -25,10 +25,10 @@ No,Group,Item,Specification,Package,Board label,Per device,For 1000 devices,ORDE
 24,Resistor,2k,"1% or 5%, any type",0805 or THT,Rls2,1,1000,1100,LCSC C17604,Part of the 5V to 3.3V signal divider. Not accuracy critical.
 25,Resistor,4.7k,"1% or 5%, any type",0805 or THT,"R5, R6",2,2000,2100,LCSC C17673,Pull-ups for the clock chip. MUST connect to 3.3V NOT 5V - this is what protects the ESP32.
 26,Resistor,0 ohm jumper,"Link, or a short piece of wire",0805 or wire,R7,1,1000,1100,LCSC C17477,Joins the two ground areas at one single point.
-27,Capacitor,100nF X7R 50V,Ceramic,0805,"C3, C6, C8, C13",4,4000,4200,LCSC / local,Decoupling.
-28,Capacitor,10uF X7R 16V,Ceramic,0805,"C5, C7",2,2000,2100,LCSC / local,Decoupling.
-29,Capacitor,33nF X7R 50V,Ceramic,0805,"Cf1, Cf2",2,2000,2100,LCSC / local,Filter. BUY ALL FILTER CAPACITORS FROM ONE BATCH.
-30,Capacitor,10nF X7R 50V,Ceramic,0805,"Cf3, Cf4",2,2000,2100,LCSC / local,Filter. Same batch as line 29.
+27,Capacitor,100nF 50V MLCC,X7R dielectric - NOT Y5V/Z5U,0805,"C3, C6, C8, C13",4,4000,4200,LCSC C49678,Decoupling. Must be SMD - lead inductance defeats decoupling.
+28,Capacitor,10uF 25V MLCC,X5R or X7R dielectric,0805,"C5, C7",2,2000,2100,LCSC C15850,Bulk energy storage. The only capacitor where through-hole is acceptable.
+29,Capacitor,33nF 50V MLCC,X7R dielectric - MANDATORY,0805,"Cf1, Cf2",2,2000,2100,LCSC C1739,FILTER TIMING. Y5V here breaks the phase correction and cannot be calibrated out. Buy all from one batch. Lowest stock of the four - check before ordering.
+30,Capacitor,10nF 50V MLCC,X7R dielectric - MANDATORY,0805,"Cf3, Cf4",2,2000,2100,LCSC C1710,FILTER TIMING. Y5V here breaks the phase correction and cannot be calibrated out. Buy all from one batch.
 31,Indicator,LED green,Standard brightness,0805,LED1,1,1000,1100,LCSC / local,Power / heartbeat.
 32,Indicator,LED blue,Standard brightness,0805,LED2,1,1000,1100,LCSC / local,WiFi / cloud status.
 33,Filter,Ferrite bead 600 ohm @100MHz,200mA or more,0805,FB1,1,1000,1100,LCSC / local,Keeps WiFi noise out of the measuring chip supply.

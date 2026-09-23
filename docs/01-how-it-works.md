@@ -210,23 +210,51 @@ Only **8 of its 30 pins** are used.
 
 ---
 
-## 8. Keeping the time
+## 8. Knowing what time it is — without a clock chip
 
-`U4` is a **DS3231** clock chip with its own coin cell.
+There is **no real-time clock on this board**, and that is deliberate.
 
-The problem it solves: mains comes back after a cut, but the internet does not.
-The device is measuring again, but has no idea what time it is — so every stored
-reading is untrustworthy. And untrustworthy timestamps mean you cannot bill from
-them.
+The problem a clock would solve: the mains comes back after a cut but the
+internet is still down. The device is measuring again but does not know the
+time, so stored readings cannot be timestamped — and untrustworthy timestamps
+mean you cannot bill from them.
 
-A DS3231 keeps accurate time for years on a CR2032. It costs about 10 % of the
-bill of materials and removes an entire category of data bugs.
+**The ESP32 solves this by itself.** It counts seconds since it powered on, and
+stores that count with every reading. The moment it reaches the internet and
+learns the real time, it subtracts backwards:
 
-**Firmware rule:** the clock chip is the source of truth. The internet corrects
-it whenever available. Every stored reading carries a flag saying whether the
-time came from the internet or from the chip alone.
+```
+  real time of a reading  =  time now  −  (uptime now  −  uptime when stored)
+```
 
----
+Every buffered reading gets an **exact** timestamp, retroactively.
+
+### When that is not enough
+
+It only breaks if the device power-cycles **twice** without reaching the internet
+in between. Then the length of the gap between the two sessions is unknown.
+
+And even then: a power cut means the house was not consuming from the grid, so
+the missing time is idle time. **The kWh total — the number the bill actually
+depends on — is never affected.** Only the shape of the daily graph goes
+slightly fuzzy, and only during a long internet outage with repeated power cuts.
+
+### What it saves
+
+A DS3231 clock plus its battery, holder, two pull-up resistors and a capacitor
+costs about **US$ 1.70 per device — US$ 1,700 across 1,000 units**, and adds six
+parts to a hand-assembled board.
+
+**The footprints stay on the PCB, unpopulated.** If customers ever complain that
+the daily graph looks wrong, fit a `PCF8563T` (~US$ 0.38) plus a crystal and a
+coin cell on a later batch. No PCB redesign.
+
+### Firmware rules this creates
+
+1. **Store the uptime counter with every reading**, alongside the measurements.
+2. **Store a boot-session number** so the server can tell sessions apart.
+3. **The server assigns the real timestamps**, not the device.
+4. Bill from the energy counter, never from the sum of power readings.
 
 ## 9. Storing readings when the internet is down
 

@@ -4,32 +4,28 @@ No,Group,Item,Specification,Package,Board label,Per device,For 1000 devices,ORDE
 3,Measuring,HLW8032 metering chip,5V UART energy meter IC,SOP-8 (1.27mm),U2,1,1000,1050,LCSC C128023 / AliExpress,About US$0.27. Easy 8-pin chip. Internal clock so no crystal needed.
 4,Measuring,Current clamp (CT),"100A : 50mA, 2000:1, 13mm opening, SCT-013-000",External,CT1,1,1000,1030,AliExpress / local,BIGGEST SINGLE COST. Test three suppliers before committing.
 5,Measuring,ZMPT101B voltage transformer,1000:1000 turns 2mA:2mA,THT 4-pin,T1,1,1000,1050,AliExpress / local,Buy the BARE transformer - NOT the blue board with an op-amp and a potentiometer.
-6,Time,DS3231SN real-time clock,+/-2ppm temperature compensated I2C,SOIC-16 (1.27mm),U4,1,1000,1050,LCSC / local,Often counterfeited - test a sample batch first.
-7,Time,CR2032 battery holder,PCB mount through-hole,THT,BT1,1,1000,1050,Local,
-8,Time,CR2032 battery,3V lithium non-rechargeable,Coin,B1,1,1000,1020,Local,NEVER add a charging circuit. Connects straight to the clock chip battery pin.
-9,Power,HLK-PM01 power supply,"230VAC in, 5V 0.6A out, ISOLATED",THT module 34x20x15mm,PS1,1,1000,1050,AliExpress / local,MUST be the isolated transformer type. Alternatives: HLK-5M05 / IRM-03-5.
-10,Power,Electrolytic capacitor 470uF 16V,105 degrees C rated,Radial THT,C2,1,1000,1050,Local,Buffers the WiFi transmit bursts. Use a 105C part - it lives in a hot panel.
-11,Safety,Fuse 250mA slow-blow,250 VAC rated 5x20mm glass,5x20mm,F1,1,1000,1100,Local,MUST be 250VAC and slow-blow (marked T). NEVER an SMD fuse - most are 63V only.
-12,Safety,Fuse clips for 5x20mm,PCB mount,THT,FH1,2,2000,2100,Local,Two clips hold one fuse.
-13,Safety,Surge protector (MOV) 14D471K,470V varistor 14mm disc,THT,RV1,1,1000,1050,Local / LCSC,Goes AFTER the fuse. Do NOT use a 275V or 390V part - it will overheat on normal mains.
-14,Safety,X2 safety capacitor 100nF,275 VAC X2 class,THT box,C1,1,1000,1050,Local / LCSC,CLASS X2 IS MANDATORY. A normal ceramic capacitor here is a fire risk.
-15,Safety,TVS diode SMAJ5.0CA,5V BIDIRECTIONAL,DO-214AC (SMA),"D2, D3",2,2000,2100,LCSC / local,Must be bidirectional - the signal is AC.
-16,Connector,Screw terminal 2-pin 5.08mm,300V 10A,5.08mm,J1,1,1000,1050,Local,Mains live and neutral in.
-17,Connector,Screw terminal 2-pin 3.5mm,Low voltage,3.5mm,J2,1,1000,1050,Local,CT clamp in. Deliberately a different size from J1 so mains cannot be wired here.
-18,Resistor,47k 1% 1/2W metal film,Through-hole axial,Axial THT,Rv1 Rv2 Rv3 Rv4,4,4000,4200,Local,Four in series. Through-hole for voltage rating and safety. NEVER replace with one resistor.
-19,Resistor,0.68 ohm 1% 50ppm thin film,0.25W precision,0805 or 1206,Rb,1,1000,1100,LCSC,MOST IMPORTANT RESISTOR ON THE BOARD. Confirm value on prototypes. NO wirewound. NO 100ppm parts.
-20,Resistor,150 ohm 1% 50ppm thin film,Precision,0805,Rv5,1,1000,1100,LCSC,Sets the voltage range. Confirm value on prototypes.
-21,Resistor,1.5k 1%,Matched pair,0805,"Rf2, Rf3",2,2000,2200,LCSC / local,PHASE CORRECTION - always change both together. Also buy 820R/1.2k/1.8k/2.2k for tuning.
-22,Resistor,1k 1%,General purpose,0805,"Rf1, Rls1, R3, R4",4,4000,4200,LCSC / local,
-23,Resistor,2k 1%,General purpose,0805,Rls2,1,1000,1100,LCSC / local,Part of the 5V to 3.3V signal divider.
-24,Resistor,4.7k 1%,General purpose,0805,"R5, R6",2,2000,2100,LCSC / local,Pull-up resistors for the clock chip.
-25,Resistor,0 ohm jumper,Link,0805,R7,1,1000,1100,LCSC / local,Joins the two ground areas at one single point.
-26,Capacitor,100nF X7R 50V,Ceramic,0805,"C3, C6, C8, C13",4,4000,4200,LCSC / local,Decoupling.
-27,Capacitor,10uF X7R 16V,Ceramic,0805,"C5, C7",2,2000,2100,LCSC / local,Decoupling.
-28,Capacitor,33nF X7R 50V,Ceramic,0805,"Cf1, Cf2",2,2000,2100,LCSC / local,Filter. BUY ALL FILTER CAPACITORS FROM ONE BATCH.
-29,Capacitor,10nF X7R 50V,Ceramic,0805,"Cf3, Cf4",2,2000,2100,LCSC / local,Filter. Same batch as line 28.
-30,Indicator,LED green,Standard brightness,0805,LED1,1,1000,1100,LCSC / local,Power / heartbeat.
-31,Indicator,LED blue,Standard brightness,0805,LED2,1,1000,1100,LCSC / local,WiFi / cloud status.
-32,Filter,Ferrite bead 600 ohm @100MHz,200mA or more,0805,FB1,1,1000,1100,LCSC / local,Keeps WiFi noise out of the measuring chip supply.
-33,Board,Bare PCB,"2 layer, 1.6mm, 1oz copper, HASL finish",~60x55mm,PCB,1,1000,1030,JLCPCB / PCBWay,Must include the routed safety slot. Order panelised 2x2 if using a stencil.
-34,Tool,Solder stencil,Frameless 0.12mm stainless steel,-,-,0,0,2,JLCPCB / PCBWay,Order together with the PCB. Buy two - they bend and wear out.
+6,Power,HLK-PM01 power supply,"230VAC in, 5V 0.6A out, ISOLATED",THT module 34x20x15mm,PS1,1,1000,1050,AliExpress / local,MUST be the isolated transformer type. Alternatives: HLK-5M05 / IRM-03-5.
+7,Power,Electrolytic capacitor 470uF 16V,105 degrees C rated,Radial THT,C2,1,1000,1050,Local,Buffers the WiFi transmit bursts. Use a 105C part - it lives in a hot panel.
+8,Safety,Fuse 250mA slow-blow,250 VAC rated 5x20mm glass,5x20mm,F1,1,1000,1100,Local,MUST be 250VAC and slow-blow (marked T). NEVER an SMD fuse - most are 63V only.
+9,Safety,Fuse clips for 5x20mm,PCB mount,THT,FH1,2,2000,2100,Local,Two clips hold one fuse.
+10,Safety,Surge protector (MOV) 14D471K,470V varistor 14mm disc,THT,RV1,1,1000,1050,Local / LCSC,Goes AFTER the fuse. Do NOT use a 275V or 390V part - it will overheat on normal mains.
+11,Safety,X2 safety capacitor 100nF,275 VAC X2 class,THT box,C1,1,1000,1050,Local / LCSC,CLASS X2 IS MANDATORY. A normal ceramic capacitor here is a fire risk.
+12,Safety,TVS diode SMAJ5.0CA,5V BIDIRECTIONAL,DO-214AC (SMA),"D2, D3",2,2000,2100,LCSC / local,Must be bidirectional - the signal is AC.
+13,Connector,Screw terminal 2-pin 5.08mm,300V 10A,5.08mm,J1,1,1000,1050,Local,Mains live and neutral in.
+14,Connector,Screw terminal 2-pin 3.5mm,Low voltage,3.5mm,J2,1,1000,1050,Local,CT clamp in. Deliberately a different size from J1 so mains cannot be wired here.
+15,Resistor,47k 1% 1/2W metal film,Through-hole axial,Axial THT,Rv1 Rv2 Rv3 Rv4,4,4000,4200,Local,Four in series. Through-hole for voltage rating and safety. NEVER replace with one resistor.
+16,Resistor,0.68 ohm 1% 50ppm thin film,0.25W precision,0805 or 1206,Rb,1,1000,1100,LCSC,MOST IMPORTANT RESISTOR ON THE BOARD. Confirm value on prototypes. NO wirewound. NO 100ppm parts.
+17,Resistor,150 ohm 1% 50ppm thin film,Precision,0805,Rv5,1,1000,1100,LCSC,Sets the voltage range. Confirm value on prototypes.
+18,Resistor,1.5k 1%,Matched pair,0805,"Rf2, Rf3",2,2000,2200,LCSC / local,PHASE CORRECTION - always change both together. Also buy 820R/1.2k/1.8k/2.2k for tuning.
+19,Resistor,1k 1%,General purpose,0805,"Rf1, Rls1, R3, R4",4,4000,4200,LCSC / local,
+20,Resistor,2k 1%,General purpose,0805,Rls2,1,1000,1100,LCSC / local,Part of the 5V to 3.3V signal divider.
+21,Resistor,0 ohm jumper,Link,0805,R7,1,1000,1100,LCSC / local,Joins the two ground areas at one single point.
+22,Capacitor,100nF X7R 50V,Ceramic,0805,"C3, C6, C8",3,3000,3200,LCSC / local,Decoupling.
+23,Capacitor,10uF X7R 16V,Ceramic,0805,"C5, C7",2,2000,2100,LCSC / local,Decoupling.
+24,Capacitor,33nF X7R 50V,Ceramic,0805,"Cf1, Cf2",2,2000,2100,LCSC / local,Filter. BUY ALL FILTER CAPACITORS FROM ONE BATCH.
+25,Capacitor,10nF X7R 50V,Ceramic,0805,"Cf3, Cf4",2,2000,2100,LCSC / local,Filter. Same batch as line 24.
+26,Indicator,LED green,Standard brightness,0805,LED1,1,1000,1100,LCSC / local,Power / heartbeat.
+27,Indicator,LED blue,Standard brightness,0805,LED2,1,1000,1100,LCSC / local,WiFi / cloud status.
+28,Filter,Ferrite bead 600 ohm @100MHz,200mA or more,0805,FB1,1,1000,1100,LCSC / local,Keeps WiFi noise out of the measuring chip supply.
+29,Board,Bare PCB,"2 layer, 1.6mm, 1oz copper, HASL finish",~60x55mm,PCB,1,1000,1030,JLCPCB / PCBWay,Must include the routed safety slot. Order panelised 2x2 if using a stencil.
+30,Tool,Solder stencil,Frameless 0.12mm stainless steel,-,-,0,0,2,JLCPCB / PCBWay,Order together with the PCB. Buy two - they bend and wear out.

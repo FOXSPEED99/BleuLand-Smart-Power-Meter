@@ -114,12 +114,11 @@ module. Board makers change the regulator, the USB chip, sometimes the pin order
 
 ## 1.8 🟡 Counterfeit parts
 
-Buying from open markets means you will eventually receive fakes. The three most
+Buying from open markets means you will eventually receive fakes. The two most
 commonly faked items here:
 
 | Part | What goes wrong | How to check |
 |---|---|---|
-| **DS3231** clock | Remarked lower-grade parts with no real temperature compensation. Drifts minutes per month instead of seconds per year | Read its internal temperature register — fakes often return a fixed or absurd value. Then run three samples for a week and measure the drift |
 | **ESP32 boards** | Remarked flash size, refurbished modules | `esptool flash_id` reports the truth. Make it part of your self-test |
 | **Current clamps** | Wildly variable ratio between batches; cores that do not close properly | Measure the ratio on 5 pieces per batch with a known current. Reject the batch if they disagree by more than 2 % |
 

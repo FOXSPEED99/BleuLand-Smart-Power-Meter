@@ -68,8 +68,7 @@ a time.
 
 1. **Paste, place and reflow all surface-mount parts** (29 of them).
 2. **Inspect.** Fix any bridges now while access is clear.
-3. **Hand-solder the safe-side through-hole parts:** `C2`, `J2`, `BT1`, `J4`,
-   `J5`.
+3. **Hand-solder the safe-side through-hole parts:** `C2`, `J2`, `J4`, `J5`.
 4. **Hand-solder the mains parts last:** `Rv1`–`Rv4`, `T1`, `PS1`, `J1`, the fuse
    clips, `RV1`, `C1`. These are the tallest parts and the ones you least want
    to work around.
@@ -82,8 +81,7 @@ a time.
    > until the first humid coastal summer. Clean every board, inspect every
    > board.
 
-6. **Fit the battery.**
-7. **Plug in the ESP32 board.**
+6. **Plug in the ESP32 board.**
 
 ## 1.5 Parts that must never go through reflow
 
@@ -92,7 +90,6 @@ a time.
 | `PS1` HLK-PM01 | Sealed module, not reflow-rated |
 | `T1` ZMPT101B | Wound component with a plastic bobbin |
 | `C2` electrolytic | Will vent or degrade |
-| `BT1` battery holder | Plastic deforms |
 | `J1`, `J2` terminals | Plastic melts |
 | `J4`, `J5` headers | Plastic deforms |
 | `B1` battery | **Never heat a lithium cell** |
@@ -126,8 +123,8 @@ Know what you are fighting before designing a test process.
 ## 2.2 Stage 1 — Before any power (every board, ~90 seconds)
 
 1. **Look at it** under magnification: solder bridges, especially on `U2` and
-   `U4`.
-2. **Check polarity:** `C2`, `LED1`, `LED2`, `U2` pin 1, `U4` pin 1.
+   `U2`.
+2. **Check polarity:** `C2`, `LED1`, `LED2`, `U2` leg 1.
 3. **Rail test:** 5 V to `GROUND` must not be a short. 3.3 V to `GROUND` must not
    be a short.
 4. **⭐ Isolation test — the most important test on the board.**
@@ -156,8 +153,7 @@ at a normal bench.
 |---|---|
 | A valid 24-byte packet arrives from `U2` within 1 second | Measuring chip alive, level shifter correct, wiring good |
 | Its checksum is valid | Clean signal path |
-| Clock chip answers on the I²C bus | `U4`, `R5`, `R6` correct |
-| Clock reports a sane time and no "oscillator stopped" flag | Battery fitted and good |
+| The device reaches an NTP server and sets its clock | Internet path works end to end |
 | Storage area mounts, a test record writes and reads back | Flash partition |
 | WiFi scan finds at least one network | Radio and antenna |
 | Both lights blink | `LED1`, `LED2`, `R3`, `R4` |

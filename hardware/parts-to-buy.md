@@ -116,26 +116,162 @@ into the clamp input by mistake.
 
 ## 7. Resistors
 
-| # | Value | Per device | **Order** | Board labels |
-|---|---|---|---|---|
-| 19 | **47 kΩ, 1 %, ½ W metal film, through-hole** | 4 | **4,200** | Rv1 Rv2 Rv3 Rv4 |
-| 20 | **0.68 Ω, 1 %, ≤50 ppm/°C, thin film** | 1 | **1,100** | Rb |
-| 21 | **150 Ω, 1 %, ≤50 ppm/°C, thin film** | 1 | **1,100** | Rv5 |
-| 22 | **1.5 kΩ, 1 %** | 2 | **2,200** | Rf2, Rf3 |
-| 23 | 1 kΩ, 1 % | 4 | **4,200** | Rf1, Rls1, R3, R4 |
-| 24 | 2 kΩ, 1 % | 1 | **1,100** | Rls2 |
-| 25 | **4.7 kΩ, 1 %** | 2 | **2,100** | R5, R6 |
-| 26 | 0 Ω jumper | 1 | **1,100** | R7 |
+The resistors on this board do **three completely different jobs**, and each job
+has a different rule. Buy the wrong *type* and the board still works — it just
+reads the wrong number, and you will never find out why.
 
-⚠️ **#20 is the most accuracy-critical part on the whole board.** It must be 1 %
-and ≤50 ppm/°C. **Never wirewound** — its inductance introduces timing error.
+### 7a. The measuring resistors — accuracy critical
 
-⚠️ **#19 must be through-hole**, not surface-mount. Small SMD resistors are not
-rated for the voltage across them here.
+These five sit in the measuring path. Whatever they do, the reading does.
+
+| # | Value | **Type you must buy** | Per device | **Order** | Board labels |
+|---|---|---|---|---|---|
+| 20 | **0.68 Ω** | **Current-sense chip resistor, 1 %, ≤100 ppm/°C** (≤50 ppm better), 1206 or 0805 | 1 | **1,100** | Rb |
+| 21 | **150 Ω** | 1 %, **≤50 ppm/°C**, thin film, 0805 | 1 | **1,100** | Rv5 |
+| 22 | **1.5 kΩ** | 1 %, ≤100 ppm/°C, 0805, **both from the same reel** | 2 | **2,200** | Rf2, Rf3 |
+| 23a | 1 kΩ | 1 %, ≤100 ppm/°C, 0805 | 1 | **1,100** | Rf1 |
+
+**Keep all five surface-mount.** Not because through-hole is less accurate — it
+isn't — but because these carry a signal of about **20 millivolts**, next to a
+switching power supply. A through-hole resistor has 10 mm legs; every extra
+millimetre of leg is an antenna picking up switching noise straight into the
+measuring chip.
+
+**`Rb` (0.68 Ω) is the single most important part on the board.** See the
+explanation below before you buy it.
+
+**`Rf2` and `Rf3` must be a matched pair.** Buy them on one reel, fit them from
+the same reel. Their *exact* value matters less than the fact that they are the
+same as each other.
+
+### 7b. The mains resistors — safety critical
+
+| # | Value | **Type you must buy** | Per device | **Order** | Board labels |
+|---|---|---|---|---|---|
+| 19 | **47 kΩ** | 1 %, **½ W metal film, through-hole axial** | 4 | **4,200** | Rv1 Rv2 Rv3 Rv4 |
+
+⚠️ **These four must stay through-hole.** Full mains sits across the chain. A
+through-hole resistor has a long body and fails **open** — it goes quiet. A tiny
+chip resistor can arc across its own body under a lightning surge. Never replace
+the four with one 188 kΩ resistor.
+
+### 7c. The housekeeping resistors — nothing critical
+
+| # | Value | Type | Per device | **Order** | Board labels |
+|---|---|---|---|---|---|
+| 23b | 1 kΩ | Anything, 1 % or 5 % | 3 | **3,100** | Rls1, R3, R4 |
+| 24 | 2 kΩ | Anything, 1 % or 5 % | 1 | **1,100** | Rls2 |
+| 25 | **4.7 kΩ** | Anything, 1 % or 5 % | 2 | **2,100** | R5, R6 |
+| 26 | 0 Ω jumper | 0805 link, or a short piece of wire | 1 | **1,100** | R7 |
+
+These carry LED current and digital signals. **Through-hole ½ W is completely
+fine here.** So is 5 %. Use whatever the local shop has.
 
 ⚠️ **#25 must connect to 3.3 V, never to 5 V.** The clock chip runs on 5 V but
 the ESP32 is not 5 V tolerant. These two resistors are what keep the bus at
 3.3 V and protect the ESP32.
+
+---
+
+### About the 0.68 Ω — what actually matters
+
+**The power rating does not matter. At all.**
+
+At the biggest load this device will ever see, the clamp pushes about **31
+milliamps** through this resistor. The heat it makes is:
+
+> 0.031 A × 0.031 A × 0.68 Ω ≈ **0.0007 watts**
+
+A 2 W resistor is about **three thousand times** bigger than it needs to be. Any
+resistor made, down to the smallest chip, has enough power rating. **Stop looking
+at the wattage.**
+
+**What matters is how much the resistor changes when it gets warm.**
+
+This is called the **temperature coefficient**, written in **ppm/°C**. It says
+how many parts-per-million the resistance moves for every degree.
+
+A breaker box in Syria goes from maybe 10 °C on a winter night to 55 °C on a
+summer afternoon — the box is closed, and the power supply inside warms it. Call
+it a **45 °C swing**:
+
+| Resistor type | Typical ppm/°C | Error over 45 °C |
+|---|---|---|
+| Carbon film (beige body, 5 %) | 250 – 500 | **1.1 % – 2.3 %** |
+| **Metal oxide film (grey body, 5 %)** | 200 – 300 | **0.9 % – 1.4 %** |
+| Ordinary chip resistor, 1 % | 100 | 0.45 % |
+| Metal film axial, 1 % | 50 – 100 | 0.2 % – 0.45 % |
+| **Current-sense chip resistor** | 50 – 75 | **0.2 % – 0.3 %** |
+
+**Now the important part — why this is different from tolerance.**
+
+A **5 % tolerance** sounds terrible and is actually harmless. It is a *fixed*
+error. You measure each board once during calibration, work out its correction
+factor, and store it. After that the 5 % is gone forever.
+
+A **temperature coefficient cannot be calibrated out.** It is not a fixed error —
+it moves during the day, every day, for the life of the product. Calibrate at
+25 °C and the board is right at 25 °C and wrong everywhere else.
+
+And it fails in the worst possible direction: resistance goes **up** with
+temperature → the chip sees **more** millivolts → the device reports **more**
+power. So a metal-oxide resistor would over-report by about 1 % **in summer,
+exactly when the air conditioning is running and the bill is highest and the
+customer is looking hardest.**
+
+**So: the grey 2 W resistor in the photo is the wrong part** — not because it is
+too big, but because it is metal oxide film. Buy one of these instead:
+
+1. **Best — a current-sense chip resistor.** On LCSC, filter
+   *Resistors → Current Sense Resistors* for **0.68 Ω, ±1 %, ≤100 ppm/°C**, in
+   **1206** (easier to solder than 0805, and still no hidden pads). Stackpole
+   CSR/CSRN and Yageo PE series are both this class.
+2. **Backup, if you cannot get 0.68 Ω** — put **two 1.3 Ω or two 1.5 Ω metal
+   film resistors in parallel** (that gives 0.65 Ω or 0.75 Ω). Above 1 Ω,
+   ordinary 1 % / 50 ppm metal film is available everywhere, including as a
+   through-hole axial. Two parts instead of one, but the specification is easy
+   to find.
+
+⚠️ **Never wirewound** for this position, whatever its tolerance says. A
+wirewound resistor is a coil — it adds a small timing shift to the current
+signal, which is exactly the thing the whole design is fighting.
+
+---
+
+### "Can I just use through-hole ½ W for everything?"
+
+**Short answer: for the housekeeping ones (7c), yes. For the measuring ones
+(7a), no. For the mains ones (7b), you must.**
+
+Three things people get wrong here:
+
+**1. Through-hole is not less accurate.** An ordinary blue 1 % metal film axial
+is **50–100 ppm/°C**, which is as good as or better than a generic 1 % chip
+resistor. Going through-hole is not an accuracy downgrade — *provided you buy
+metal film (blue body) and not carbon film (beige body)*. Carbon film is
+250–500 ppm/°C and only comes in 5 %.
+
+**2. The real cost is board area.** A ½ W axial resistor lying flat needs about
+**30 mm²** of board. An 0805 chip needs about **4.5 mm²** — seven times less. The
+board is roughly 60 × 55 mm. Moving ten resistors to through-hole eats about
+**10 % of the whole board**. You asked for the smallest board that can hide in a
+breaker panel; this is where it goes.
+
+**3. The real cost is assembly time.** If you ever buy the stencil and hotplate,
+chip resistors cost **zero** assembly time — they go on with the paste and come
+out soldered. Through-hole parts must still be hand-soldered afterwards, two
+joints each. Ten extra through-hole resistors is roughly **55 hours across 1,000
+units**. With an iron only, the two are about the same speed.
+
+**Summary of what to buy:**
+
+| Position | Buy |
+|---|---|
+| Rb (0.68 Ω) | **Current-sense chip, 1206, 1 %, ≤100 ppm/°C** |
+| Rv5 (150 Ω) | 0805 thin film, 1 %, ≤50 ppm/°C |
+| Rf1, Rf2, Rf3 | 0805, 1 %, one reel each value |
+| Rv1–Rv4 (47 kΩ) | **Through-hole metal film, ½ W, 1 %** |
+| Rls1, Rls2, R3, R4, R5, R6, R7 | Anything you have — through-hole ½ W is fine |
 
 ## 8. Capacitors
 
@@ -186,14 +322,18 @@ confirmed on real hardware first.
 Buy **10 of everything above**, plus these extra values so you can find the right
 ones without re-ordering:
 
-| For | Buy 10 each of these (0805, 1 %) |
+| For | Buy 10 each of these, 1 % |
 |---|---|
-| **`Rb`** (clamp range) | 0.47 Ω, 0.51 Ω, 0.56 Ω, 0.62 Ω, **0.68 Ω**, 0.75 Ω, 0.82 Ω, 1.0 Ω |
+| **`Rb`** (clamp range) | 0.47 Ω, 0.51 Ω, 0.56 Ω, 0.62 Ω, **0.68 Ω**, 0.75 Ω, 0.82 Ω, 1.0 Ω — **current-sense type**, 1206 |
 | **`Rv5`** (voltage range) | 62 Ω, 100 Ω, **150 Ω**, 220 Ω, 330 Ω, 470 Ω |
 | **`Rf2`/`Rf3`** (timing) | 820 Ω, 1.2 kΩ, **1.5 kΩ**, 1.8 kΩ, 2.2 kΩ — buy **20** of each, they go in pairs |
 
 About **US$ 15 of resistors.** It is the difference between locking the design in
 half a day and finding the problem at unit 300.
+
+For the sweep only, tolerance and tempco do not matter — you are finding the
+right *value*. Once the value is fixed, buy the production parts to the
+specification in section 7.
 
 ---
 

@@ -17,14 +17,14 @@ No,Group,Item,Specification,Package,Board label,Per device,For 1000 devices,ORDE
 16,Safety,TVS diode SMAJ5.0CA,5V BIDIRECTIONAL,DO-214AC (SMA),"D2, D3",2,2000,2100,LCSC / local,Must be bidirectional - the signal is AC.
 17,Connector,Screw terminal 2-pin 5.08mm,300V 10A,5.08mm,J1,1,1000,1050,Local,Mains live and neutral in.
 18,Connector,Screw terminal 2-pin 3.5mm,Low voltage,3.5mm,J2,1,1000,1050,Local,CT clamp in. Deliberately a different size from J1 so mains cannot be wired here.
-19,Resistor,47k 1% 1/2W metal film,Through-hole axial,Axial THT,Rv1 Rv2 Rv3 Rv4,4,4000,4200,Local,Four in series. Through-hole for voltage rating and safety. NEVER replace with one resistor.
-20,Resistor,0.68 ohm 1% 50ppm thin film,0.25W precision,0805 or 1206,Rb,1,1000,1100,LCSC,MOST IMPORTANT RESISTOR ON THE BOARD. Confirm value on prototypes. NO wirewound. NO 100ppm parts.
-21,Resistor,150 ohm 1% 50ppm thin film,Precision,0805,Rv5,1,1000,1100,LCSC,Sets the voltage range. Confirm value on prototypes.
-22,Resistor,1.5k 1%,Matched pair,0805,"Rf2, Rf3",2,2000,2200,LCSC / local,PHASE CORRECTION - always change both together. Also buy 820R/1.2k/1.8k/2.2k for tuning.
-23,Resistor,1k 1%,General purpose,0805,"Rf1, Rls1, R3, R4",4,4000,4200,LCSC / local,
-24,Resistor,2k 1%,General purpose,0805,Rls2,1,1000,1100,LCSC / local,Part of the 5V to 3.3V signal divider.
-25,Resistor,4.7k 1%,General purpose,0805,"R5, R6",2,2000,2100,LCSC / local,Pull-ups for the clock chip. MUST connect to 3.3V NOT 5V - this is what protects the ESP32.
-26,Resistor,0 ohm jumper,Link,0805,R7,1,1000,1100,LCSC / local,Joins the two ground areas at one single point.
+19,Resistor,47k 1% metal film,"Through-hole axial, 1/2 W, 1%",Axial THT,Rv1 Rv2 Rv3 Rv4,4,4000,4200,Local,"SAFETY. Four in series across mains. Must be through-hole: long body, fails open. NEVER replace with one resistor. NEVER use SMD here."
+20,Resistor,0.68 ohm current-sense,"1%, <=100 ppm/degC (<=50 better)",1206 preferred (0805 ok),Rb,1,1000,1100,LCSC current-sense category,"MOST IMPORTANT RESISTOR ON THE BOARD. Power rating is irrelevant (dissipates 0.7 mW) - buy for TEMPCO not wattage. NO metal oxide. NO carbon. NO wirewound. Alternative: two 1.3R or 1.5R metal film in parallel. Confirm value on prototypes."
+21,Resistor,150 ohm thin film,"1%, <=50 ppm/degC",0805,Rv5,1,1000,1100,LCSC,"Sets the voltage range. Tempco matters - it scales every voltage reading. Confirm value on prototypes."
+22,Resistor,1.5k 1%,"<=100 ppm/degC, MATCHED PAIR from one reel",0805,"Rf2, Rf3",2,2000,2200,LCSC / local,"PHASE CORRECTION - always change both together. Keep SMD: short leads keep the 20 mV analog loop small. Also buy 820R/1.2k/1.8k/2.2k for tuning."
+23,Resistor,1k 1%,"Rf1 must be 0805 1%; Rls1/R3/R4 can be anything incl. THT 1/2 W","0805 (Rf1), any (rest)","Rf1, Rls1, R3, R4",4,4000,4200,LCSC / local,"Rf1 is in the measuring path - keep it SMD. Rls1 is a digital divider, R3/R4 are LED resistors - not critical."
+24,Resistor,2k,"1% or 5%, any type",0805 or THT,Rls2,1,1000,1100,LCSC / local,"Part of the 5V to 3.3V signal divider. Not accuracy critical."
+25,Resistor,4.7k,"1% or 5%, any type",0805 or THT,"R5, R6",2,2000,2100,LCSC / local,"Pull-ups for the clock chip. MUST connect to 3.3V NOT 5V - this is what protects the ESP32."
+26,Resistor,0 ohm jumper,"Link, or a short piece of wire",0805 or wire,R7,1,1000,1100,LCSC / local,"Joins the two ground areas at one single point."
 27,Capacitor,100nF X7R 50V,Ceramic,0805,"C3, C6, C8, C13",4,4000,4200,LCSC / local,Decoupling.
 28,Capacitor,10uF X7R 16V,Ceramic,0805,"C5, C7",2,2000,2100,LCSC / local,Decoupling.
 29,Capacitor,33nF X7R 50V,Ceramic,0805,"Cf1, Cf2",2,2000,2100,LCSC / local,Filter. BUY ALL FILTER CAPACITORS FROM ONE BATCH.

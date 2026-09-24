@@ -31,6 +31,63 @@ Spreadsheet version: [`parts-to-buy.csv`](parts-to-buy.csv)
 
 ---
 
+## ⛔ Read this before you place any order
+
+**The list is complete and consistent.** Every part named in the wiring guide has
+a line here, the per-device count adds up to 51, and nothing is missing.
+
+**That is not the same as "proven".** Nobody has built this board yet. Three
+values on it are calculated, not measured, and calculation cannot settle them.
+
+> ### Order **10 sets**, not 1,000.
+>
+> Build five, confirm the three values below, *then* place the big order.
+> Ordering 1,000 sets before a working prototype is the most expensive mistake
+> available at this stage — roughly **US$ 14,500** of it.
+
+### What has been checked, and what has not
+
+| Status | Parts |
+|---|---|
+| ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole |
+| ⚠️ **Value calculated, must be measured** | `Rb` 0.68 Ω · `Rv5` 150 Ω · `Rf2`/`Rf3` 1.5 kΩ |
+| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · terminal blocks · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
+
+The ⬜ row is not a worry — those are commodity parts you will buy by
+description, and section 5 already says which ones must come from a reputable
+source. It is listed so you know nobody opened a datasheet for them.
+
+### The one assumption worth knowing about
+
+`Rb` = 0.68 Ω is sized so the clamp's output lands inside the metering chip's
+input range at 63 A. That range was inferred from the chip's own reference
+designs (1 mΩ shunt at 20 A, 3 mΩ at 10 A — both landing near 20–30 mV), **not
+read off a specification line.**
+
+If the real range is wider, the reading will be quieter with a larger `Rb`; if
+narrower, large loads will clip. **This is exactly what the prototype sweep
+settles**, and it is why `Rb` must not be bought in quantity first.
+
+### The three questions the prototype answers
+
+| Value | What you are looking for | How you know |
+|---|---|---|
+| **`Rb`** | The largest value that does not clip at your biggest test load | Reading stays linear as load increases, then stops tracking |
+| **`Rv5`** | Voltage reading lands mid-range, not near zero or clipping | Compare against a known-good meter at 230 V |
+| **`Rf2`/`Rf3`** | Power factor reads ~1.00 on a heater and correctly on a motor | A resistive load must give PF 1.00; if it does not, the timing is off |
+
+### Two sourcing risks to settle before the big order
+
+1. **The ESP32 boards.** Ask eng-elec directly whether they can supply **1,050
+   from one production batch**. These boards change between runs — different
+   regulators, different pin order. A mixed shipment means two different boards
+   in your product.
+2. **The current clamp.** It is about a third of the bill and it sets the error
+   budget (±1.6 % unit-to-unit, larger than any other error on the board).
+   Sample three suppliers and measure before committing.
+
+---
+
 ## 1. The brain
 
 | # | Item | Per device | **Order** | Where |

@@ -58,7 +58,7 @@ that, saves it, and sends it over WiFi.
 | Bulk capacitor | 470 µF, 16 V, 105 °C | 1 |
 | Metering chip | HLW8032, 8 legs | 1 |
 | Ferrite bead | 600 Ω at 100 MHz | 1 |
-| Clamp terminal block | 2-way screw terminal, 3.5 mm | 1 |
+| Clamp socket | 3.5 mm stereo socket, PCB mount | 1 |
 | Current clamp | SCT-013-000, 100 A : 50 mA | 1 (external) |
 | Burden resistor | 0.68 Ω, 1 %, 50 ppm | 1 |
 | Voltage range resistor | 150 Ω, 1 %, 50 ppm | 1 |
@@ -233,34 +233,66 @@ four parts instead of one hot spot. **Never replace them with a single resistor.
 The clamp makes a tiny current. The burden resistor turns it into a voltage.
 
 ```
- clamp screw 1 ─┬──────┬───[1.5k]──┬──────┬─► metering chip "I1P"
+   jack TIP ────┬──────┬───[1.5k]──┬──────┬─► metering chip "I1P"
                 │      │           │      │
             0.68 Ω   diode       33 nF  10 nF
                 │      │           │      │
- clamp screw 2 ─┴──────┴──[1.5k]───┴──────┼─► metering chip "I1N"
+ jack SLEEVE ───┴──────┴──[1.5k]───┴──────┼─► metering chip "I1N"
        │                    ▲            10 nF
-       └─ ANALOG GROUND ────┘              │
-                                    ANALOG GROUND
+   jack RING                │              │
+       │                    │              │
+       └─ ANALOG GROUND ────┘       ANALOG GROUND
 ```
 
-The clamp is not soldered — its two wires screw into the small terminal block.
+**The clamp plugs in — it is not soldered and not screwed.** The SCT-013-000
+arrives with a **3.5 mm stereo plug already moulded onto its cable**, so the
+board carries a matching **3.5 mm stereo socket**. The installer pushes the plug
+in and the job is done.
+
+### Why the socket has three contacts when the clamp has two wires
+
+A 3.5 mm stereo socket has three contacts, named after the parts of the plug
+they touch:
+
+| Contact | Name | What the clamp uses it for |
+|---|---|---|
+| **TIP** | the very end of the plug | **One end of the clamp winding** |
+| **RING** | the middle band | **Nothing — the clamp leaves it unconnected** |
+| **SLEEVE** | the long barrel nearest the cable | **The other end of the clamp winding** |
+
+So the clamp really does only use two of them. The third exists because the
+plug is a standard audio plug.
+
+**We connect RING to ANALOG GROUND anyway**, for three reasons:
+
+1. The socket then also accepts a **two-contact (mono) plug**, in case a
+   different clamp is ever used.
+2. While a plug is being pushed in, its tip slides across the RING contact.
+   With RING grounded, that momentarily **shorts** the clamp — and **a shorted
+   clamp is the safe state.** (It is an *open* clamp that is dangerous.)
+3. A floating metal contact sitting right beside the signal contact picks up
+   noise. Grounded, it shields instead.
+
+This is harmless once the plug is fully home, because the plug's own ring band
+is not connected to anything inside the clamp.
 
 **Connections**
 
-1. One screw of the **clamp terminal block** is your **clamp signal** point.
+1. The socket's **TIP** contact is your **clamp signal** point.
    Connect three things: the **0.68 Ω burden resistor**, a **protection diode**,
    and the **first 1.5 kΩ filter resistor**.
-2. The **other screw** goes to **ANALOG GROUND**.
-3. The **burden resistor's other end** goes to **ANALOG GROUND**.
-4. The **diode's other end** goes to **ANALOG GROUND**.
-5. The **first 1.5 kΩ resistor's other end** is your **current +** point.
+2. The socket's **SLEEVE** contact goes to **ANALOG GROUND**.
+3. The socket's **RING** contact goes to **ANALOG GROUND** as well.
+4. The **burden resistor's other end** goes to **ANALOG GROUND**.
+5. The **diode's other end** goes to **ANALOG GROUND**.
+6. The **first 1.5 kΩ resistor's other end** is your **current +** point.
    Connect three things: a **33 nF capacitor**, a **10 nF capacitor**, and the
    metering chip's **I1P** pin.
-6. Separately, connect **ANALOG GROUND** to the **second 1.5 kΩ resistor**.
-7. That resistor's **other end** is your **current −** point. Connect three
-   things: the **33 nF capacitor's other end** (the same one from step 5), the
+7. Separately, connect **ANALOG GROUND** to the **second 1.5 kΩ resistor**.
+8. That resistor's **other end** is your **current −** point. Connect three
+   things: the **33 nF capacitor's other end** (the same one from step 6), the
    **second 10 nF capacitor**, and the metering chip's **I1N** pin.
-8. Both **10 nF capacitors' other ends** go to **ANALOG GROUND**.
+9. Both **10 nF capacitors' other ends** go to **ANALOG GROUND**.
 
 **The second 1.5 kΩ resistor looks pointless but is essential.** It runs from
 ground into the chip's negative input. The chip compares its two inputs against
@@ -271,6 +303,48 @@ clamp cable stops cancelling out. **Both resistors must be the same value.**
 slightly in time, which makes readings wrong on motor loads. Making these two
 bigger than the 1 kΩ voltage filter resistor compensates. 1.5 kΩ is the starting
 point — you tune it during calibration, and you always change both together.
+
+### Three things to get right about the socket
+
+**1. It must sit on the low-voltage side of the barrier.** The socket, its hole
+in the case, and everything it touches belong on the safe side of the 8 mm gap.
+Never route a clamp track across the barrier.
+
+**2. Give the cable a strain relief in the plastic case.** This is the one real
+weakness of a plug compared to a screw terminal: a screw terminal cannot fall
+out, a plug can vibrate loose over years in a panel. Mould a slot or clamp into
+the 3D-printed case that grips the **cable**, so the socket never takes the
+pull. Design the hole about 0.5 mm oversize — 3D prints are not precise enough
+to trust a tight fit.
+
+**3. The footprint must match the socket you actually buy.** Every 3.5 mm socket
+has a different pin arrangement. Download the footprint from the product page of
+the exact part number you are ordering — do not reuse a footprint from another
+manufacturer's socket because "it is also 3.5 mm". See section 6 of the parts
+list.
+
+### Is it safe that the clamp can be unplugged while the power is on?
+
+**Yes — and this is designed for, not a lucky accident.**
+
+Normally, disconnecting a current transformer while current flows through the
+cable it is clamped around is dangerous: the winding tries to push current into
+an open circuit and the voltage climbs. The **SCT-013-000 has a transient
+voltage suppressor built inside it** for exactly this reason (older units used
+two 22 V zener diodes). The voltage on the plug is clamped to a safe level.
+
+**Good practice anyway:** unclip the clamp from the cable before pulling the
+plug out.
+
+### Optional: let the device know the clamp is missing
+
+Most 3.5 mm sockets include a **switch contact** — a spare pin that is connected
+when no plug is inserted and disconnects when one is. Wire it to a spare ESP32
+pin with a pull-up and the firmware can tell the difference between
+**"0 watts"** and **"nobody plugged the clamp in"**.
+
+Cost: one spare pin and one resistor. **Worth it** — it turns a silent
+installation mistake into a message on the app.
 
 ---
 
@@ -526,7 +600,7 @@ are the ones used in the shopping list.
 
 | Label | Part |
 |---|---|
-| J1 / J2 | Mains terminal block / clamp terminal block |
+| J1 / J2 | Mains terminal block / clamp socket |
 | F1 | Fuse (FH1 = its two clips) |
 | RV1 | Varistor |
 | C1 | X2 capacitor |

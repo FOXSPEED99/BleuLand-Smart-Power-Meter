@@ -49,9 +49,9 @@ values on it are calculated, not measured, and calculation cannot settle them.
 
 | Status | Parts |
 |---|---|
-| ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole |
+| ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole · 3.5 mm clamp socket |
 | ⚠️ **Value calculated, must be measured** | `Rb` 0.68 Ω · `Rv5` 150 Ω · `Rf2`/`Rf3` 1.5 kΩ |
-| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · terminal blocks · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
+| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · mains terminal block · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
 
 The ⬜ row is not a worry — those are commodity parts you will buy by
 description, and section 5 already says which ones must come from a reputable
@@ -166,10 +166,35 @@ an SMD fuse, most are only rated 63 V.
 | # | Item | Per device | **Order** | Where |
 |---|---|---|---|---|
 | 17 | Screw terminal, 2-pin, **5.08 mm** (mains) | 1 | **1,050** | Local |
-| 18 | Screw terminal, 2-pin, **3.5 mm** (clamp) | 1 | **1,050** | Local |
+| 18 | **3.5 mm stereo socket, PCB mount** (clamp) | 1 | **1,050** | LCSC **C2884926** |
 
-The two sizes are different **on purpose** — it makes it impossible to wire mains
-into the clamp input by mistake.
+**#18 is a socket, not a screw terminal** — [PJ-320A from
+XKB](https://www.lcsc.com/product-detail/C2884926.html), about **US$ 0.07**.
+
+**Why a socket.** The SCT-013-000 arrives with a **3.5 mm stereo plug already
+moulded onto its cable**. With a screw terminal, every installer has to cut that
+plug off and strip the wires — 1,000 cables destroyed, no way to unplug a faulty
+clamp, and a stripping job done inside a live panel. With a socket the installer
+just pushes it in.
+
+The two connectors are **completely different shapes on purpose** — you cannot
+push a mains wire into a 3.5 mm socket even if you try.
+
+⚠️ **Do not use a Switchcraft jack.** A `35RAPC2BHN2` is about **US$ 3.09**
+each — **US$ 3,090 for 1,000 units**, more than the ESP32 boards, and roughly a
+fifth of your whole bill of materials. It is a professional audio part and this
+is not a professional audio product. The PJ-320A does the same job for 2 % of
+the price.
+
+⚠️ **The footprint must match the socket you actually buy.** Every manufacturer
+arranges the pins differently. If you draw the board with one socket's footprint
+and order another, you get 1,030 bare boards that fit nothing. Take the footprint
+from the product page of the exact part number you are ordering.
+
+💡 **Most of these sockets have a spare switch pin** that changes state when a
+plug is inserted. Wiring it to a spare ESP32 pin lets the firmware tell
+**"0 watts"** apart from **"nobody plugged the clamp in"**. Costs one pin and one
+resistor — see Block 4 of the wiring guide.
 
 ## 7. Resistors
 

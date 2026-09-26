@@ -84,6 +84,33 @@ with a diagram.
 > non-sinusoidal output would introduce error the design is not tuned for — worth
 > revisiting if you ever sell into homes running on inverters.
 
+## 1.5b 🔴 Mains wired into the clamp terminal
+
+**The worst accident this device can have.** The 0.68 Ω burden resistor sits
+directly across the clamp screws, so live-and-neutral into those two screws puts
+**230 V across a resistor rated for a few hundredths of a joule**. The fault runs
+at 500–600 A until the house breaker trips ~10 ms later — **hundreds of joules**
+into a few square millimetres, inside a breaker panel. The existing SMAJ5.0CA
+makes it worse: it fails short and nothing clears the short.
+
+**Three mitigations, all in the design:**
+
+1. **A 2.54 mm clamp terminal.** Accepts ~0.5 mm²; mains wiring is 1.5 mm²
+   minimum. It physically will not fit. **This is the strongest one**, and the
+   only one that also covers the live-only case below.
+2. **A 500 mA / 250 VAC fuse plus a ~58 V crowbar** on the clamp input. Bounds
+   the fault energy from hundreds of joules to under one. Costs ~US$ 0.40 and
+   **zero accuracy**, because the fuse sits outside the measured path.
+3. **Opposite ends of the board**, different colours, isolation barrier between.
+
+⚠️ **Live only, with no neutral, cannot be fixed electrically.** The low-voltage
+side is isolated, so almost no current flows, nothing blows, nothing trips — and
+the whole low-voltage side silently sits at 230 V. Only mitigation 1 prevents it.
+**Do not skip the small terminal.**
+
+Full working and the protection circuit are in Block 4 of
+[`02-connections.md`](02-connections.md).
+
 ## 1.6 🟡 Clamp direction, and leaving room for solar
 
 Fit the clamp backwards and the power reads **negative**.

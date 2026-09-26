@@ -58,7 +58,7 @@ that, saves it, and sends it over WiFi.
 | Bulk capacitor | 470 µF, 16 V, 105 °C | 1 |
 | Metering chip | HLW8032, 8 legs | 1 |
 | Ferrite bead | 600 Ω at 100 MHz | 1 |
-| Clamp terminal block | 2-way screw terminal, 3.5 mm | 1 |
+| Clamp terminal block | 2-way screw terminal, **2.54 mm** | 1 |
 | Current clamp | SCT-013-000, 100 A : 50 mA | 1 (external) |
 | Burden resistor | 0.68 Ω, 1 %, 50 ppm | 1 |
 | Voltage range resistor | 150 Ω, 1 %, 50 ppm | 1 |
@@ -312,15 +312,159 @@ everything it touches belong on the safe side of the 8 mm gap. Never route a
 clamp track across the barrier.
 
 **2. The two terminal blocks are different sizes on purpose.** Mains is
-**5.08 mm**, the clamp is **3.5 mm**. A mains wire physically will not fit the
-clamp terminal. Do not "standardise" them to save a part number — that
-difference is a safety interlock.
+**5.08 mm**, the clamp is **2.54 mm** — the smallest terminal that still takes
+the clamp cable. Do not "standardise" them to save a part number; that
+difference is the safety interlock described above.
 
 **3. Give the cable a strain relief in the plastic case.** A screw terminal grips
 bare copper, not insulation, so a pull on the cable puts all the force on the
 wire right where it enters the screw, and it work-hardens and snaps. Mould a
 slot or clamp into the 3D-printed case that grips the **cable jacket** before it
 reaches the board.
+
+### ⚠️⚠️ What happens if someone wires mains into the clamp terminal
+
+**Short answer: yes, it is violent, and yes, it can be fixed in hardware.**
+Two different accidents are possible and they behave completely differently.
+
+#### Accident A — live AND neutral into the two clamp screws
+
+The **0.68 Ω burden resistor sits directly across those two screws.** It is the
+whole fault path.
+
+| | |
+|---|---|
+| Voltage across a 0.68 Ω chip resistor | **230 V** |
+| Power, if it held | 230² ÷ 0.68 = **78,000 watts** |
+| What a 1206 chip resistor survives | a few **hundredths of a joule** |
+
+It does not hold. In sequence, over a few milliseconds:
+
+1. The **protection diode** (SMAJ5.0CA, a 5 V part) avalanches instantly and
+   **fails short** — which is what TVS diodes do. The input is now a dead short.
+2. The **burden resistor** vaporises. Microseconds.
+3. The fault is now limited only by the house wiring — roughly **0.4 Ω**, so
+   **500–600 A**.
+4. The **63 A breaker** trips magnetically, but that takes about **10 ms**.
+
+**Hundreds of joules** land in a few square millimetres of board. Copper traces
+vaporise, and copper vapour is conductive, so it sustains an arc. Expect
+fibreglass and molten solder ejected, the plastic enclosure cracked or melted,
+and a real ignition risk **inside a breaker panel**.
+
+The **clamp is destroyed too** — its fine secondary winding burns, while it is
+wrapped around a live house cable.
+
+⚠️ **The protection diode we already have makes this worse, not better.** It
+fails short and there is nothing downstream to clear the short. **A clamping
+device with no clearing device is not protection.**
+
+#### Accident B — live only, into one clamp screw
+
+Completely different, and in one way worse.
+
+The low-voltage side of the board is **isolated** from mains by the power
+module's transformer. Put live on one clamp screw and there is no return path,
+so **almost no current flows** — a fraction of a milliamp through stray
+capacitance.
+
+**Nothing blows. Nothing trips. Nothing looks wrong.** The device keeps working.
+
+But the **entire low-voltage side is now sitting at 230 V** relative to earth:
+the clamp cable, the clamp, the ESP32, and the USB socket on it. The enclosure
+and the clamp's own insulation are all that stand between that and a person.
+
+**No component on the board can fix Accident B.** There is no voltage *across*
+anything — the whole side floats up together. Only mechanical prevention helps.
+
+---
+
+### The fix for Accident A — a fuse and a crowbar
+
+This is the standard protection used on telephone line cards, which face exactly
+this hazard (mains contacting a phone line). Two parts:
+
+```
+                     ┌── FUSE ──┬──────────┬─── clamp signal ──[1.5k]─► I1P
+ clamp screw 1 ──────┘          │          │
+                            CROWBAR      0.68 Ω
+                                │          │
+ clamp screw 2 ─────────────────┴──────────┴─── ANALOG GROUND ─[1.5k]─► I1N
+```
+
+**The crowbar** (a thyristor surge protector, ~58 V breakover) does nothing
+until the voltage across the input goes above about 58 V. Then it switches to a
+near short and holds the node at **about 3 volts**. The burden resistor never
+sees more than that.
+
+**The fuse** then clears the fault. With the crowbar holding the line down, the
+current through the fuse is hundreds of amps, and a small fast fuse opens in
+**microseconds**.
+
+| | Today | With fuse + crowbar |
+|---|---|---|
+| Energy into the board | **hundreds of joules** | **under one joule** |
+| Time to clear | ~10 ms (breaker) | ~2 µs (fuse) |
+| Outcome | explosion, ignition risk | two parts to replace |
+
+#### Why this costs **zero** accuracy
+
+This is the part that makes it work. **Put the fuse outside the measured path.**
+
+The chip measures the voltage across the **burden resistor only** — the filter
+resistor taps the node *between* the fuse and the burden. The fuse carries the
+clamp current but its voltage drop is never measured. **Its resistance and its
+temperature coefficient do not enter the reading at all.**
+
+The fuse does add its resistance to the clamp's total loop burden, and that does
+affect the clamp itself — but there is enormous room. OpenEnergyMonitor measured
+this same clamp with a **22 Ω** burden in the emonPi and emonTx V3 and found the
+phase error there is about 4°, which they call insignificant. Our loop is
+**0.68 Ω**, and a 500 mA fuse adds under **1 Ω**. We stay far inside proven
+territory.
+
+The crowbar is off in normal operation — leakage is nanoamps and its capacitance
+is tens of picofarads, which is nothing at 50 Hz.
+
+#### What to buy
+
+| Part | Specification | Why |
+|---|---|---|
+| **Fuse** | **500 mA, fast-acting, rated 250 VAC** | Clamp delivers at most 50 mA, so 10× headroom — it will never nuisance-blow |
+| **Crowbar** | Thyristor surge protector (TSPD / SIDACtor type), **~58 V breakover**, bidirectional | Above the clamp's own 22 V internal limit, so it never interferes; far below anything that hurts the board |
+
+⚠️ **The fuse must be rated 250 VAC, not 63 V.** Most small SMD fuses are 63 V
+parts — across 230 V they arc over instead of interrupting, and then they are
+not a fuse at all. Same rule as the mains fuse in Block 1.
+
+💡 **Keep the SMAJ5.0CA too.** It still handles the everyday job — static from
+handling the clamp cable. The crowbar handles the catastrophic job. They are not
+alternatives.
+
+**Cost: roughly US$ 0.40 per device** — about 3 % of the bill of materials, to
+turn a fire into a blown fuse.
+
+---
+
+### The other half — make the mistake harder to make
+
+The fuse and crowbar fix Accident A. **Only geometry fixes Accident B.** All of
+these are physical, not stickers:
+
+1. **Keep the two terminal blocks at opposite ends of the board**, with the
+   isolation barrier between them. Wiring both by mistake should mean reaching
+   across the whole device.
+2. **Use a small-aperture clamp terminal.** The clamp's cable is thin — about
+   0.3 mm². A **2.54 mm pitch** terminal block accepts roughly 0.5 mm² and no
+   more. Mains wiring in a panel is **1.5 mm² at the very least**. It physically
+   will not go in.
+3. **Recess the clamp terminal** in the plastic case so only a thin cable can
+   reach the screws.
+4. **Different colour.** A black clamp terminal beside a blue mains terminal
+   costs nothing.
+
+**Point 2 is the strongest single change available**, and it is the one that
+also covers Accident B. If you do nothing else here, do that.
 
 ### Is it safe to unscrew the clamp while the power is on?
 

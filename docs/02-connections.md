@@ -58,7 +58,7 @@ that, saves it, and sends it over WiFi.
 | Bulk capacitor | 470 µF, 16 V, 105 °C | 1 |
 | Metering chip | HLW8032, 8 legs | 1 |
 | Ferrite bead | 600 Ω at 100 MHz | 1 |
-| Clamp socket | 3.5 mm stereo socket, PCB mount | 1 |
+| Clamp terminal block | 2-way screw terminal, 3.5 mm | 1 |
 | Current clamp | SCT-013-000, 100 A : 50 mA | 1 (external) |
 | Burden resistor | 0.68 Ω, 1 %, 50 ppm | 1 |
 | Voltage range resistor | 150 Ω, 1 %, 50 ppm | 1 |
@@ -233,66 +233,67 @@ four parts instead of one hot spot. **Never replace them with a single resistor.
 The clamp makes a tiny current. The burden resistor turns it into a voltage.
 
 ```
-   jack TIP ────┬──────┬───[1.5k]──┬──────┬─► metering chip "I1P"
+ clamp screw 1 ─┬──────┬───[1.5k]──┬──────┬─► metering chip "I1P"
                 │      │           │      │
             0.68 Ω   diode       33 nF  10 nF
                 │      │           │      │
- jack SLEEVE ───┴──────┴──[1.5k]───┴──────┼─► metering chip "I1N"
+ clamp screw 2 ─┴──────┴──[1.5k]───┴──────┼─► metering chip "I1N"
        │                    ▲            10 nF
-   jack RING                │              │
-       │                    │              │
-       └─ ANALOG GROUND ────┘       ANALOG GROUND
+       └─ ANALOG GROUND ────┘              │
+                                    ANALOG GROUND
 ```
 
-**The clamp plugs in — it is not soldered and not screwed.** The SCT-013-000
-arrives with a **3.5 mm stereo plug already moulded onto its cable**, so the
-board carries a matching **3.5 mm stereo socket**. The installer pushes the plug
-in and the job is done.
+**The clamp is not soldered — its two wires screw into the small terminal
+block.**
 
-### Why the socket has three contacts when the clamp has two wires
+### ⚠️ The clamp arrives with a plug on it. You have to cut it off.
 
-A 3.5 mm stereo socket has three contacts, named after the parts of the plug
-they touch:
+The SCT-013-000 comes with a **3.5 mm stereo plug moulded onto its cable**. A
+screw terminal cannot accept that, so for every unit someone must cut the plug
+off and strip the two wires.
 
-| Contact | Name | What the clamp uses it for |
+**This was a deliberate choice.** A socket would avoid the cutting, but a
+2-pin screw terminal is just **two holes at a fixed spacing** — identical on
+every manufacturer's part, so the footprint can never be wrong. Audio sockets
+all have different pin layouts, and picking the wrong footprint means a
+thousand unusable boards. Reliability of the footprint won over convenience of
+assembly. Revisit it in v2 once a specific socket is qualified.
+
+### Polarity — mark it and keep it consistent
+
+Cutting the plug off loses the one thing the plug guaranteed: **which wire is
+which.** The two wires are not interchangeable.
+
+| Wire | Was connected to | Goes to |
 |---|---|---|
-| **TIP** | the very end of the plug | **One end of the clamp winding** |
-| **RING** | the middle band | **Nothing — the clamp leaves it unconnected** |
-| **SLEEVE** | the long barrel nearest the cable | **The other end of the clamp winding** |
+| **White** | the plug's **tip** | the **clamp signal** point (step 1 below) |
+| **Red** | the plug's **sleeve** | **ANALOG GROUND** (step 2 below) |
 
-So the clamp really does only use two of them. The third exists because the
-plug is a standard audio plug.
+⚠️ **Check the colours on your actual clamps before building 1,000 of them** —
+suppliers do change them. Cut one plug open and look.
 
-**We connect RING to ANALOG GROUND anyway**, for three reasons:
-
-1. The socket then also accepts a **two-contact (mono) plug**, in case a
-   different clamp is ever used.
-2. While a plug is being pushed in, its tip slides across the RING contact.
-   With RING grounded, that momentarily **shorts** the clamp — and **a shorted
-   clamp is the safe state.** (It is an *open* clamp that is dangerous.)
-3. A floating metal contact sitting right beside the signal contact picks up
-   noise. Grounded, it shields instead.
-
-This is harmless once the plug is fully home, because the plug's own ring band
-is not connected to anything inside the clamp.
+Get this backwards and the current waveform is inverted: the meter reports
+**negative power**, and if you ever add solar in v2 it will read import and
+export the wrong way round. **Print the wire colour next to each screw on the
+silkscreen** so an installer cannot get it wrong.
 
 **Connections**
 
-1. The socket's **TIP** contact is your **clamp signal** point.
-   Connect three things: the **0.68 Ω burden resistor**, a **protection diode**,
-   and the **first 1.5 kΩ filter resistor**.
-2. The socket's **SLEEVE** contact goes to **ANALOG GROUND**.
-3. The socket's **RING** contact goes to **ANALOG GROUND** as well.
-4. The **burden resistor's other end** goes to **ANALOG GROUND**.
-5. The **diode's other end** goes to **ANALOG GROUND**.
-6. The **first 1.5 kΩ resistor's other end** is your **current +** point.
+1. One screw of the **clamp terminal block** — the one the **white** wire goes
+   into — is your **clamp signal** point. Connect three things: the
+   **0.68 Ω burden resistor**, a **protection diode**, and the **first 1.5 kΩ
+   filter resistor**.
+2. The **other screw** — for the **red** wire — goes to **ANALOG GROUND**.
+3. The **burden resistor's other end** goes to **ANALOG GROUND**.
+4. The **diode's other end** goes to **ANALOG GROUND**.
+5. The **first 1.5 kΩ resistor's other end** is your **current +** point.
    Connect three things: a **33 nF capacitor**, a **10 nF capacitor**, and the
    metering chip's **I1P** pin.
-7. Separately, connect **ANALOG GROUND** to the **second 1.5 kΩ resistor**.
-8. That resistor's **other end** is your **current −** point. Connect three
-   things: the **33 nF capacitor's other end** (the same one from step 6), the
+6. Separately, connect **ANALOG GROUND** to the **second 1.5 kΩ resistor**.
+7. That resistor's **other end** is your **current −** point. Connect three
+   things: the **33 nF capacitor's other end** (the same one from step 5), the
    **second 10 nF capacitor**, and the metering chip's **I1N** pin.
-9. Both **10 nF capacitors' other ends** go to **ANALOG GROUND**.
+8. Both **10 nF capacitors' other ends** go to **ANALOG GROUND**.
 
 **The second 1.5 kΩ resistor looks pointless but is essential.** It runs from
 ground into the chip's negative input. The chip compares its two inputs against
@@ -304,177 +305,33 @@ slightly in time, which makes readings wrong on motor loads. Making these two
 bigger than the 1 kΩ voltage filter resistor compensates. 1.5 kΩ is the starting
 point — you tune it during calibration, and you always change both together.
 
-### Which socket pin is TIP, which is RING, which is SLEEVE?
+### Three things to get right
 
-**Do not take this from a drawing, and do not take it from a datasheet.
-Measure it.** It takes two minutes and the answer is certain.
+**1. Keep it on the low-voltage side of the barrier.** The terminal block and
+everything it touches belong on the safe side of the 8 mm gap. Never route a
+clamp track across the barrier.
 
-Three reasons this matters more than it looks:
+**2. The two terminal blocks are different sizes on purpose.** Mains is
+**5.08 mm**, the clamp is **3.5 mm**. A mains wire physically will not fit the
+clamp terminal. Do not "standardise" them to save a part number — that
+difference is a safety interlock.
 
-1. **Pin numbers are not standard.** Every manufacturer numbers its own socket
-   differently. A symbol drawn for one manufacturer's socket will have the
-   numbers in the wrong places for another's, even though both are "3.5 mm
-   stereo".
-2. **PJ-320A is a generic design built by several factories** (XKB,
-   HanElectricity, SHOU HAN and others). They are not guaranteed to agree with
-   each other.
-3. **Getting RING wrong is a board respin.** See the failure table below.
+**3. Give the cable a strain relief in the plastic case.** A screw terminal grips
+bare copper, not insulation, so a pull on the cable puts all the force on the
+wire right where it enters the screw, and it work-hardens and snaps. Mould a
+slot or clamp into the 3D-printed case that grips the **cable jacket** before it
+reaches the board.
 
-#### What the three contacts are
+### Is it safe to unscrew the clamp while the power is on?
 
-Look at the plug on the end of the clamp cable. It has three metal bands
-separated by two black insulating rings:
+**Yes.** Normally, disconnecting a current transformer while current flows
+through the cable it is clamped around is dangerous: the winding tries to push
+current into an open circuit and the voltage climbs. The **SCT-013-000 has a
+transient voltage suppressor built inside it** for exactly this reason (older
+units used two 22 V zener diodes), so the voltage stays at a safe level.
 
-```
-        ┌─── TIP          the pointed end
-        │   ┌─── RING     the middle band
-        │   │   ┌─── SLEEVE   the long band nearest the cable
-        ▼   ▼   ▼
-   ════▓═║═▓═║═▓▓▓▓▓▓▓▓▓───────────  cable
-```
-
-#### The two-minute test — do this before you route the board
-
-**You need:** one socket, one SCT-013-000 clamp, a multimeter.
-
-1. Set the multimeter to **resistance (Ω)**.
-2. Plug the clamp fully into the socket.
-3. Measure between **every pair of socket pins** and write down all three
-   readings.
-4. **Two pins will read a few tens of ohms** — that is the clamp winding. Those
-   are **TIP** and **SLEEVE**.
-5. **One pin will read open circuit to both of them.** That is **RING**. The
-   clamp does not connect to it.
-
-That one measurement identifies the pin you must not get wrong.
-
-#### Telling TIP from SLEEVE
-
-**You need:** any 3.5 mm plug with a bit of cable on it — cut the end off an old
-headphone lead.
-
-1. Strip the three wires inside the cable.
-2. Multimeter on **continuity** (the beeping mode). Touch one probe to the
-   plug's **tip band** and the other to each wire until it beeps. That is the
-   **tip wire**. Repeat for the ring band and the sleeve band.
-3. Push that plug into the socket.
-4. Probe from the **tip wire** to each socket pin. The one that beeps is the
-   **TIP pin**. Repeat for the other two.
-
-Write the three pin numbers on paper and tape it to the wall. Done.
-
-#### What happens if you get it wrong
-
-| Mistake | Result | How bad |
-|---|---|---|
-| **TIP and SLEEVE swapped** | Signal polarity is inverted — the meter reads power flowing backwards | **Minor.** Fix in firmware, or turn the clamp around on the cable. |
-| **RING used as the signal pin** | The clamp's signal never reaches the chip, and the real winding is tied to ground. **Reads zero forever.** | **Board respin.** |
-
-So the whole point of the two-minute test is step 5 above: **find RING and stay
-off it.**
-
-💡 **Cheap insurance on the prototype run:** bring all three socket pins to
-three test pads with small solder-jumper links between them and the circuit. If
-the mapping turns out wrong, you move a blob of solder instead of re-ordering
-1,030 boards.
-
-#### About the symbol in your CAD library
-
-A schematic symbol's long bar at the bottom is conventionally the **sleeve** —
-it represents the plug's barrel. The two spring-shaped contacts are **tip** and
-**ring**. That convention gets you a guess, not an answer: **which spring is
-which depends on the manufacturer's drawing**, and the pin numbers attached to
-them belong to whichever part the symbol was built for.
-
-⚠️ **If your symbol and footprint came from a Switchcraft part, they are for a
-5-terminal, US$ 3.09 jack.** Replace both with the ones from the product page of
-the socket you are actually ordering before you route anything.
-
-### Three things to get right about the socket
-
-**1. It must sit on the low-voltage side of the barrier.** The socket, its hole
-in the case, and everything it touches belong on the safe side of the 8 mm gap.
-Never route a clamp track across the barrier.
-
-**2. Give the cable a strain relief in the plastic case.** This is the one real
-weakness of a plug compared to a screw terminal: a screw terminal cannot fall
-out, a plug can vibrate loose over years in a panel. Mould a slot or clamp into
-the 3D-printed case that grips the **cable**, so the socket never takes the
-pull. Design the hole about 0.5 mm oversize — 3D prints are not precise enough
-to trust a tight fit.
-
-**3. The footprint must match the socket you actually buy.** Every 3.5 mm socket
-has a different pin arrangement. Two sockets that both accept the same plug can
-have completely different pins underneath. A footprint is only valid for the
-**one exact part number** it was drawn for.
-
-⚠️ **This is the easiest way to lose a whole PCB order.** The board looks
-finished, the design rule check passes, you order 1,030 bare boards, and the
-sockets do not go in.
-
-### How to pin down a socket that has no datasheet
-
-Cheap sockets from marketplace sellers usually have no real part number and no
-dimensioned drawing. You can still qualify one — but do it with the part in your
-hand, not from a photo.
-
-**Step 1 — is it on a 2.54 mm grid?**
-
-Push the socket into a piece of ordinary **2.54 mm perfboard**. If the pins drop
-straight in, every pin sits on a 2.54 mm grid and the footprint becomes trivial
-to draw. Most generic sockets are. **This takes thirty seconds and answers most
-of the question.**
-
-If it does not fit perfboard, measure each pin from one corner of the body with
-digital calipers, and write the numbers down before you draw anything.
-
-**Step 2 — find out which pin is which, with a multimeter.**
-
-Do **not** guess from the schematic symbol. Pin 1, 2 and 3 mean different things
-on different manufacturers' symbols.
-
-1. Take any 3.5 mm **stereo** plug — a cut-off headphone lead is fine.
-2. Push it **fully** into the socket.
-3. Multimeter on **continuity** (the beeping setting).
-4. Hold one probe on the plug's **very tip**. Touch the other probe to each
-   socket pin in turn. **The pin that beeps is TIP.**
-5. Repeat holding the probe on the plug's **middle band** → that pin is **RING**.
-6. Repeat holding the probe on the plug's **long barrel** → that pin is
-   **SLEEVE**.
-7. Write the three pin numbers on paper and tape it to the reel.
-
-**Step 3 — look for the switch pins.**
-
-With the plug **pulled out**, check the remaining pins against each other. Any
-two that beep with no plug in, and stop beeping when you push the plug in, are
-the **switch contacts**. That pair is what gives you clamp detection — see below.
-
-**Step 4 — measure the barrel height.** The centre of the hole in your plastic
-case has to line up with the centre of the socket's barrel. Measure from the
-bottom of the pins (the board surface) to the middle of the barrel.
-
-### Is it safe that the clamp can be unplugged while the power is on?
-
-**Yes — and this is designed for, not a lucky accident.**
-
-Normally, disconnecting a current transformer while current flows through the
-cable it is clamped around is dangerous: the winding tries to push current into
-an open circuit and the voltage climbs. The **SCT-013-000 has a transient
-voltage suppressor built inside it** for exactly this reason (older units used
-two 22 V zener diodes). The voltage on the plug is clamped to a safe level.
-
-**Good practice anyway:** unclip the clamp from the cable before pulling the
-plug out.
-
-### Optional: let the device know the clamp is missing
-
-Most 3.5 mm sockets include a **switch contact** — a spare pin that is connected
-when no plug is inserted and disconnects when one is. Wire it to a spare ESP32
-pin with a pull-up and the firmware can tell the difference between
-**"0 watts"** and **"nobody plugged the clamp in"**.
-
-Cost: one spare pin and one resistor. **Worth it** — it turns a silent
-installation mistake into a message on the app.
+**Good practice anyway:** unclip the clamp from the cable before loosening the
+screws.
 
 ---
 
@@ -725,7 +582,6 @@ try them without re-ordering. Half a day of work that protects the whole run.
 
 | What | Why | How |
 |---|---|---|
-| **Which socket pin is TIP, RING and SLEEVE** | Pin numbers differ between manufacturers. Using RING as the signal pin means the board reads zero forever — a respin, not a firmware fix. | The two-minute meter test in Block 4. Use the exact socket you are ordering. |
 
 This one is different from the three above: those are tuned on working boards,
 this one has to be right **before the first board is made.**
@@ -739,7 +595,7 @@ are the ones used in the shopping list.
 
 | Label | Part |
 |---|---|
-| J1 / J2 | Mains terminal block / clamp socket |
+| J1 / J2 | Mains terminal block / clamp terminal block |
 | F1 | Fuse (FH1 = its two clips) |
 | RV1 | Varistor |
 | C1 | X2 capacitor |

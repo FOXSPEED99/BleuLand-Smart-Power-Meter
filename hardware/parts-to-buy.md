@@ -49,9 +49,9 @@ values on it are calculated, not measured, and calculation cannot settle them.
 
 | Status | Parts |
 |---|---|
-| ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole · 3.5 mm clamp socket |
+| ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole |
 | ⚠️ **Value calculated, must be measured** | `Rb` 0.68 Ω · `Rv5` 150 Ω · `Rf2`/`Rf3` 1.5 kΩ |
-| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · mains terminal block · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
+| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · terminal blocks · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
 
 The ⬜ row is not a worry — those are commodity parts you will buy by
 description, and section 5 already says which ones must come from a reputable
@@ -92,132 +92,24 @@ settles**, and it is why `Rb` must not be bought in quantity first.
 
 | # | Item | Per device | **Order** | Where |
 |---|---|---|---|---|
-| 1 | **ESP32 development board** — "ESP32 Type-C", 30 pins, with the metal-shielded ESP-WROOM-32 module and a CH340C chip | 1 | **1,050** | Local (eng-elec.com) or AliExpress |
-| 2 | Female header strip, 1 × 15, 2.54 mm | 2 | **2,100** | Local / LCSC |
-
-**Check every board has:** the silver metal module (not a bare black chip), 15
-pins per side, two buttons, USB-C. Buy all 1,050 **from one batch** — these
-boards change between production runs.
-
-## 2. Measuring
-
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
-| 3 | **HLW8032** metering chip, SOP-8 | 1 | **1,050** | LCSC [`C128023`](https://www.lcsc.com/product-detail/C128023.html) |
-| 4 | **Current clamp**, 100 A : 50 mA, 13 mm opening (`SCT-013-000`) | 1 | **1,030** | AliExpress / local |
-| 5 | **ZMPT101B** voltage transformer | 1 | **1,050** | AliExpress / local |
-
-⚠️ For #5, buy the **bare transformer** — a small black block with four pins. Not
-the blue circuit board with an op-amp and a potentiometer on it.
-
-⚠️ #4 is your **biggest single cost, about a third of the bill**. Buy samples
-from three suppliers and compare before committing.
-
-## 3. Timekeeping
-
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
-| 6 | **DS1307Z+** clock chip, SOIC-8 | 1 | **1,050** | LCSC [`C1520446`](https://www.lcsc.com/product-detail/C1520446.html) |
-| 7 | **Crystal, 32.768 kHz, 12.5 pF**, cylindrical 2 × 6 mm | 1 | **1,100** | LCSC [`C52082`](https://www.lcsc.com/product-detail/C52082.html) |
-| 8 | CR2032 battery holder, through-hole | 1 | **1,050** | Local |
-| 9 | CR2032 battery, 3 V | 1 | **1,020** | Local |
-
-**What this does:** keeps the time running when mains is off, so readings stored
-during an internet outage still get correct timestamps.
-
-⚠️ **Buy the bare chip, never a module.** Both the DS3231 "blue module" and the
-DS1307 "Tiny RTC" module have charging circuits that destroy a normal CR2032 —
-and the Tiny RTC ships with a rechargeable cell that dies in about two years.
-
-⚠️ **The crystal must be 12.5 pF.** The DS1307 has its load capacitors *inside*,
-so you add no extra capacitors — but the crystal must match. A 6 pF crystal here
-makes the clock run minutes-per-day slow.
-
-⚠️ **The battery connects directly to the chip's battery pin and nothing else.**
-No diode, no resistor, no charging circuit. At 0.84 µA it lasts **8–10 years**.
-
-## 4. Power
-
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
-| 10 | **HLK-PM01** — 230 VAC to 5 V, **isolated** | 1 | **1,050** | AliExpress / local |
-| 11 | Electrolytic capacitor 470 µF 16 V, **105 °C** | 1 | **1,050** | Local |
-
-⚠️ #10 must be the **isolated transformer type**, not a capacitive dropper. This
-part is what makes the whole low-voltage side safe to touch.
-
-## 5. Safety parts — buy these from a reputable source
-
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
-| 12 | **Fuse 250 mA slow-blow, 250 VAC**, 5 × 20 mm glass | 1 | **1,100** | Local |
-| 13 | Fuse clips for 5 × 20 mm | 2 | **2,100** | Local |
-| 14 | **MOV surge protector 14D471K** (470 V, 14 mm disc) | 1 | **1,050** | Local / LCSC |
-| 15 | **X2 safety capacitor, 100 nF, 275 VAC** | 1 | **1,050** | Local / LCSC |
-| 16 | TVS diode **SMAJ5.0CA** (bidirectional) | 2 | **2,100** | LCSC / local |
-
-⚠️ **Do not let a shop substitute "the same value" from an unmarked bin for items
-12, 14 and 15.** A counterfeit X2 capacitor or MOV is a fire risk, not a
-performance issue. The fuse must be **250 VAC** rated and **slow-blow** — never
-an SMD fuse, most are only rated 63 V.
-
-## 6. Connectors
-
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
 | 17 | Screw terminal, 2-pin, **5.08 mm** (mains) | 1 | **1,050** | Local |
-| 18 | **3.5 mm stereo socket, PCB mount** (clamp) | 1 | **1,050** | LCSC **C2884926** |
+| 18 | Screw terminal, 2-pin, **3.5 mm** (clamp) | 1 | **1,050** | Local |
 
-**#18 is a socket, not a screw terminal** — [PJ-320A from
-XKB](https://www.lcsc.com/product-detail/C2884926.html), about **US$ 0.07**.
+The two sizes are different **on purpose** — a mains wire physically will not
+fit the 3.5 mm clamp terminal. Do not standardise them to save a part number;
+that difference is a safety interlock.
 
-**Why a socket.** The SCT-013-000 arrives with a **3.5 mm stereo plug already
-moulded onto its cable**. With a screw terminal, every installer has to cut that
-plug off and strip the wires — 1,000 cables destroyed, no way to unplug a faulty
-clamp, and a stripping job done inside a live panel. With a socket the installer
-just pushes it in.
+**Why screw terminals and not an audio socket.** The SCT-013-000 arrives with a
+3.5 mm stereo plug moulded on, so a matching socket would save cutting the plug
+off 1,000 times. It was considered and rejected: **a 2-pin screw terminal is two
+holes at a fixed spacing, identical on every manufacturer's part**, while every
+3.5 mm socket has a different pin layout. Choosing the wrong socket footprint
+means a thousand unusable bare boards, and nothing in the design rule check warns
+you. The footprint risk outweighed the assembly convenience for v1 — revisit in
+v2, once a specific socket has been qualified against its own datasheet.
 
-The two connectors are **completely different shapes on purpose** — you cannot
-push a mains wire into a 3.5 mm socket even if you try.
-
-⚠️ **Do not use a Switchcraft jack.** A `35RAPC2BHN2` is about **US$ 3.09**
-each — **US$ 3,090 for 1,000 units**, more than the ESP32 boards, and roughly a
-fifth of your whole bill of materials. It is a professional audio part and this
-is not a professional audio product. The PJ-320A does the same job for 2 % of
-the price.
-
-⚠️ **The footprint must match the socket you actually buy.** Every manufacturer
-arranges the pins differently. If you draw the board with one socket's footprint
-and order another, you get 1,030 bare boards that fit nothing.
-
-**Two sockets that take the same plug are not the same part.** A SnapEDA
-footprint for a Switchcraft jack is correct — for a Switchcraft jack. It is
-wrong for every other 3.5 mm socket on earth. Take the footprint from the
-datasheet of the **exact part number** you are ordering, or measure a physical
-sample. Block 4 of the wiring guide has the step-by-step procedure for
-qualifying a socket that came with no datasheet.
-
-⚠️ **A marketplace listing is not a source for a production part.** Brands like
-*uxcell* and *sourcing map* are resellers, not manufacturers — no part number,
-no dimensioned drawing, and no promise that next year's batch has the same pin
-spacing. Fine for bench testing, not for locking a PCB footprint to.
-
-**Cost comparison for 1,000 units:**
-
-| Source | Each | **1,050 units** |
-|---|---|---|
-| **LCSC PJ-320A (C2884926)** | US$ 0.07 | **~US$ 74** |
-| Amazon 10-pack (uxcell / sourcing map) | ~€0.86 | ~€900 |
-| Switchcraft 35RAPC2BHN2 | US$ 3.09 | **US$ 3,244** |
-
-**Buy 20 of the LCSC part with the prototype batch** and draw the footprint from
-that one. Marketplace samples are useful for trying the idea on the bench — they
-are not what the board should be dimensioned around.
-
-💡 **Most of these sockets have a spare switch pin** that changes state when a
-plug is inserted. Wiring it to a spare ESP32 pin lets the firmware tell
-**"0 watts"** apart from **"nobody plugged the clamp in"**. Costs one pin and one
-resistor — see Block 4 of the wiring guide.
+⚠️ **Buy the 3.5 mm terminal with a standard 3.5 mm pitch**, and confirm the
+pitch on the part before routing. Pitch is the only thing that has to match.
 
 ## 7. Resistors
 

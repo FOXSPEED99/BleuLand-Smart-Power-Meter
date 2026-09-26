@@ -218,8 +218,34 @@ Any one of these is reason enough. None is urgent today.
 | Brain | ESP32 development board | **Soldered ESP32 module** |
 | Assembly | By hand | Machine |
 | Chip cost | $0.27 | $1.32 |
+| Clamp connection | Screw terminal — plug cut off | **3.5 mm socket — plug in** |
 
 **Net cost change: roughly +US$ 2 per device** — and the board gets smaller.
+
+### The clamp socket, deferred from v1
+
+The SCT-013-000 arrives with a **3.5 mm stereo plug already moulded on**, so v1
+throws that away: every unit needs the plug cut off and two wires stripped,
+inside a panel, and a faulty clamp can never simply be unplugged.
+
+**It was not a cost problem** — a generic socket is about US$ 0.07, roughly what
+the screw terminal costs. It was a **footprint risk**. A 2-pin screw terminal is
+two holes at a fixed pitch and every manufacturer's is identical; every 3.5 mm
+socket has a different pin layout, and picking the wrong one means a thousand
+unusable bare boards with no warning from the design rule check.
+
+**To bring it into v2, do this first, in this order:**
+
+1. Pick **one** socket part number that has a real datasheet with a dimensioned
+   drawing — not a marketplace listing from a reseller brand.
+2. Buy 20 and confirm the pins sit where the drawing says.
+3. With a clamp plugged in, measure between every pair of pins. **Two read a few
+   tens of ohms — that is the winding.** The third reads open: that is the ring
+   contact, and the clamp does not use it. Tie it to analog ground.
+4. Build the footprint from that drawing, and keep the part number pinned in the
+   bill of materials.
+
+Do all four before routing, and the socket is a straight upgrade.
 
 ## 2.3 What stays exactly the same
 

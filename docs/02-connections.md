@@ -404,10 +404,54 @@ pull. Design the hole about 0.5 mm oversize — 3D prints are not precise enough
 to trust a tight fit.
 
 **3. The footprint must match the socket you actually buy.** Every 3.5 mm socket
-has a different pin arrangement. Download the footprint from the product page of
-the exact part number you are ordering — do not reuse a footprint from another
-manufacturer's socket because "it is also 3.5 mm". See section 6 of the parts
-list.
+has a different pin arrangement. Two sockets that both accept the same plug can
+have completely different pins underneath. A footprint is only valid for the
+**one exact part number** it was drawn for.
+
+⚠️ **This is the easiest way to lose a whole PCB order.** The board looks
+finished, the design rule check passes, you order 1,030 bare boards, and the
+sockets do not go in.
+
+### How to pin down a socket that has no datasheet
+
+Cheap sockets from marketplace sellers usually have no real part number and no
+dimensioned drawing. You can still qualify one — but do it with the part in your
+hand, not from a photo.
+
+**Step 1 — is it on a 2.54 mm grid?**
+
+Push the socket into a piece of ordinary **2.54 mm perfboard**. If the pins drop
+straight in, every pin sits on a 2.54 mm grid and the footprint becomes trivial
+to draw. Most generic sockets are. **This takes thirty seconds and answers most
+of the question.**
+
+If it does not fit perfboard, measure each pin from one corner of the body with
+digital calipers, and write the numbers down before you draw anything.
+
+**Step 2 — find out which pin is which, with a multimeter.**
+
+Do **not** guess from the schematic symbol. Pin 1, 2 and 3 mean different things
+on different manufacturers' symbols.
+
+1. Take any 3.5 mm **stereo** plug — a cut-off headphone lead is fine.
+2. Push it **fully** into the socket.
+3. Multimeter on **continuity** (the beeping setting).
+4. Hold one probe on the plug's **very tip**. Touch the other probe to each
+   socket pin in turn. **The pin that beeps is TIP.**
+5. Repeat holding the probe on the plug's **middle band** → that pin is **RING**.
+6. Repeat holding the probe on the plug's **long barrel** → that pin is
+   **SLEEVE**.
+7. Write the three pin numbers on paper and tape it to the reel.
+
+**Step 3 — look for the switch pins.**
+
+With the plug **pulled out**, check the remaining pins against each other. Any
+two that beep with no plug in, and stop beeping when you push the plug in, are
+the **switch contacts**. That pair is what gives you clamp detection — see below.
+
+**Step 4 — measure the barrel height.** The centre of the hole in your plastic
+case has to line up with the centre of the socket's barrel. Measure from the
+bottom of the pins (the board surface) to the middle of the barrel.
 
 ### Is it safe that the clamp can be unplugged while the power is on?
 

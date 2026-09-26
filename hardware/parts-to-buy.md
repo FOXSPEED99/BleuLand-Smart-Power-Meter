@@ -188,8 +188,31 @@ the price.
 
 ⚠️ **The footprint must match the socket you actually buy.** Every manufacturer
 arranges the pins differently. If you draw the board with one socket's footprint
-and order another, you get 1,030 bare boards that fit nothing. Take the footprint
-from the product page of the exact part number you are ordering.
+and order another, you get 1,030 bare boards that fit nothing.
+
+**Two sockets that take the same plug are not the same part.** A SnapEDA
+footprint for a Switchcraft jack is correct — for a Switchcraft jack. It is
+wrong for every other 3.5 mm socket on earth. Take the footprint from the
+datasheet of the **exact part number** you are ordering, or measure a physical
+sample. Block 4 of the wiring guide has the step-by-step procedure for
+qualifying a socket that came with no datasheet.
+
+⚠️ **A marketplace listing is not a source for a production part.** Brands like
+*uxcell* and *sourcing map* are resellers, not manufacturers — no part number,
+no dimensioned drawing, and no promise that next year's batch has the same pin
+spacing. Fine for bench testing, not for locking a PCB footprint to.
+
+**Cost comparison for 1,000 units:**
+
+| Source | Each | **1,050 units** |
+|---|---|---|
+| **LCSC PJ-320A (C2884926)** | US$ 0.07 | **~US$ 74** |
+| Amazon 10-pack (uxcell / sourcing map) | ~€0.86 | ~€900 |
+| Switchcraft 35RAPC2BHN2 | US$ 3.09 | **US$ 3,244** |
+
+**Buy 20 of the LCSC part with the prototype batch** and draw the footprint from
+that one. Marketplace samples are useful for trying the idea on the bench — they
+are not what the board should be dimensioned around.
 
 💡 **Most of these sockets have a spare switch pin** that changes state when a
 plug is inserted. Wiring it to a spare ESP32 pin lets the firmware tell

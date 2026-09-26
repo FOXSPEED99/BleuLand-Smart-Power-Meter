@@ -256,7 +256,7 @@ names".
 | ☐ | Clamp terminal — **screw 1** (white wire) | **CLAMP IN** | — |
 | ☐ | Clamp terminal — **screw 2** (red wire) | **AGND** | — |
 | ☐ | **Fuse**, 500 mA | **CLAMP IN** | **CLAMP+** |
-| ☐ | **Crowbar**, ~58 V | **CLAMP+** | **AGND** |
+| ☐ | **Surge thyristor**, 65 V | **CLAMP+** | **AGND** |
 | ☐ | **Burden resistor**, 0.68 Ω | **CLAMP+** | **AGND** |
 | ☐ | **TVS diode**, SMAJ5.0CA | **CLAMP+** | **AGND** |
 | ☐ | **Filter resistor A**, 1.5 kΩ | **CLAMP+** | **I1P** |
@@ -275,7 +275,7 @@ names".
                     CLAMP+
   screw 1 ──[FUSE]────┬──────────┬──────────┬───[1.5k A]──┬──────┬──► I1P
   (white)             │          │          │             │      │
-                  CROWBAR     0.68 Ω      TVS           33 nF  10 nF
+                  THYRISTOR     0.68 Ω      TVS           33 nF  10 nF
                       │          │          │             │      │
   screw 2 ────────────┴──────────┴──────────┴──[1.5k B]───┴──────┼──► I1N
   (red)               │                        ▲                 │
@@ -287,9 +287,9 @@ resistors, which carry the signal onward to the chip.
 
 ## Three things you must not get wrong
 
-**1. The fuse goes before CLAMP+, the crowbar after it.** In that order. If the
-crowbar sits on the terminal side of the fuse, the fuse never blows and the
-crowbar burns instead.
+**1. The fuse goes before CLAMP+, the surge thyristor after it.** In that order. If the
+surge thyristor sits on the terminal side of the fuse, the fuse never blows and the
+surge thyristor burns instead.
 
 **2. Both 1.5 kΩ resistors must be the same value.** Resistor B looks pointless
 — it runs from ground into the chip's negative input and seems to do nothing.
@@ -309,7 +309,7 @@ negative power. Print the colours on the silkscreen next to the screws.
 📄 **Everything else about this block lives in its own file**, so it does not get
 in the way while you are drawing:
 **[`06-clamp-input-protection.md`](06-clamp-input-protection.md)** — why the
-fuse and crowbar are there, what happens if mains is wired into the clamp
+fuse and surge thyristor are there, what happens if mains is wired into the clamp
 terminal, why the wire colours matter, and the terminal block rules.
 
 You do not need to read it to draw Block 4.

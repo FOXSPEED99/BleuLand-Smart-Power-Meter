@@ -98,7 +98,7 @@ makes it worse: it fails short and nothing clears the short.
 1. **A 2.54 mm clamp terminal.** Accepts ~0.5 mm²; mains wiring is 1.5 mm²
    minimum. It physically will not fit. **This is the strongest one**, and the
    only one that also covers the live-only case below.
-2. **A 500 mA / 250 VAC fuse plus a ~58 V crowbar** on the clamp input. Bounds
+2. **A 500 mA / 250 VAC fuse plus a ~58 V surge thyristor** on the clamp input. Bounds
    the fault energy from hundreds of joules to under one. Costs ~US$ 0.40 and
    **zero accuracy**, because the fuse sits outside the measured path.
 3. **Opposite ends of the board**, different colours, isolation barrier between.

@@ -2,12 +2,47 @@
 
 **You do not need this file to draw the board.** Block 4 of
 [`02-connections.md`](02-connections.md) has the wiring, and it is complete on
-its own. This file is the reasoning behind it: why the fuse and the crowbar are
+its own. This file is the reasoning behind it: why the fuse and the surge thyristor are
 there, what happens if someone wires mains into the clamp terminal, and why the
 two terminal blocks are different sizes.
 
 Read it when you want to know *why*, or when someone asks you to justify a
 design decision — not while you are trying to finish a schematic.
+
+---
+
+## First — what "surge thyristor" means
+
+You will see this part called a **crowbar** in electronics writing. **It is
+named after the metal tool.** Before solid-state parts existed, the way to kill
+a dangerous fault was literally to throw a crowbar across two bus bars: short
+them together hard, force the fuse or breaker to blow, done. The component does
+the same job, so it inherited the name.
+
+**What it actually does:** it is a switch that stays **open** until the voltage
+across it goes above a set level. Then it **slams shut** — becomes almost a
+short — and stays shut until the current stops flowing. It has two terminals and
+no polarity.
+
+**What to search for when buying**, because "crowbar" will only find the tool:
+
+| Name | Who uses it |
+|---|---|
+| **TVS Thyristor** | most distributors |
+| **TSPD** (Thyristor Surge Protection Device) | datasheets |
+| **TSS** (Thyristor Surge Suppressor) | LCSC's category name |
+| **SIDACtor** | Littelfuse's brand |
+| **Trisil** | STMicroelectronics' brand |
+
+**The part for this board:** **SMP100LC-65**, LCSC
+**[C2649282](https://lcsc.com/product-detail/Thyristor-Surge-Suppressors-TSS_STMicroelectronics-SMP100LC-65_C2649282.html)**
+— 65 V, bidirectional, **SMB package**. Two terminals, no hidden pads, the same
+size and shape as the SMAJ5.0CA you are already fitting, so it solders exactly
+the same way.
+
+**Why 65 V:** it has to sit **above** the clamp's own internal protection
+(around 22 V) so it never interferes with normal operation, and far **below**
+anything that damages the board. Anywhere from about 35 V to 70 V works.
 
 ---
 
@@ -17,7 +52,7 @@ design decision — not while you are trying to finish a schematic.
 |---|---|
 | What is the worst thing that can happen? | Mains wired into the clamp screws |
 | Without protection? | Hundreds of joules on the board, fire risk |
-| With the fuse and crowbar? | Under one joule — one fuse to replace |
+| With the fuse and surge thyristor? | Under one joule — one fuse to replace |
 | Does the protection cost accuracy? | **No.** The fuse sits outside the measured path |
 | What it costs | About **US$ 0.40** per device |
 | The one free protection | The clamp terminal is **too small for a mains wire to fit** |
@@ -157,7 +192,7 @@ anything — the whole side floats up together. Only mechanical prevention helps
 
 ---
 
-### The fix for Accident A — a fuse and a crowbar
+### The fix for Accident A — a fuse and a surge thyristor
 
 This is the standard protection used on telephone line cards, which face exactly
 this hazard (mains contacting a phone line). Two parts:
@@ -165,21 +200,21 @@ this hazard (mains contacting a phone line). Two parts:
 ```
                      ┌── FUSE ──┬──────────┬─── clamp signal ──[1.5k]─► I1P
  clamp screw 1 ──────┘          │          │
-                            CROWBAR      0.68 Ω
+                            THYRISTOR      0.68 Ω
                                 │          │
  clamp screw 2 ─────────────────┴──────────┴─── ANALOG GROUND ─[1.5k]─► I1N
 ```
 
-**The crowbar** (a thyristor surge protector, ~58 V breakover) does nothing
+**The surge thyristor** (a thyristor surge protector, ~58 V breakover) does nothing
 until the voltage across the input goes above about 58 V. Then it switches to a
 near short and holds the node at **about 3 volts**. The burden resistor never
 sees more than that.
 
-**The fuse** then clears the fault. With the crowbar holding the line down, the
+**The fuse** then clears the fault. With the surge thyristor holding the line down, the
 current through the fuse is hundreds of amps, and a small fast fuse opens in
 **microseconds**.
 
-| | Today | With fuse + crowbar |
+| | Today | With fuse + surge thyristor |
 |---|---|---|
 | Energy into the board | **hundreds of joules** | **under one joule** |
 | Time to clear | ~10 ms (breaker) | ~2 µs (fuse) |
@@ -201,7 +236,7 @@ phase error there is about 4°, which they call insignificant. Our loop is
 **0.68 Ω**, and a 500 mA fuse adds under **1 Ω**. We stay far inside proven
 territory.
 
-The crowbar is off in normal operation — leakage is nanoamps and its capacitance
+The surge thyristor is off in normal operation — leakage is nanoamps and its capacitance
 is tens of picofarads, which is nothing at 50 Hz.
 
 #### What to buy
@@ -209,14 +244,14 @@ is tens of picofarads, which is nothing at 50 Hz.
 | Part | Specification | Why |
 |---|---|---|
 | **Fuse** | **500 mA, fast-acting, rated 250 VAC** | Clamp delivers at most 50 mA, so 10× headroom — it will never nuisance-blow |
-| **Crowbar** | Thyristor surge protector (TSPD / SIDACtor type), **~58 V breakover**, bidirectional | Above the clamp's own 22 V internal limit, so it never interferes; far below anything that hurts the board |
+| **Surge thyristor** | **SMP100LC-65**, LCSC **C2649282** — a TVS Thyristor / TSPD, 65 V, bidirectional, SMB package | Above the clamp's own 22 V internal limit, so it never interferes; far below anything that hurts the board |
 
 ⚠️ **The fuse must be rated 250 VAC, not 63 V.** Most small SMD fuses are 63 V
 parts — across 230 V they arc over instead of interrupting, and then they are
 not a fuse at all. Same rule as the mains fuse in Block 1.
 
 💡 **Keep the SMAJ5.0CA too.** It still handles the everyday job — static from
-handling the clamp cable. The crowbar handles the catastrophic job. They are not
+handling the clamp cable. The surge thyristor handles the catastrophic job. They are not
 alternatives.
 
 **Cost: roughly US$ 0.40 per device** — about 3 % of the bill of materials, to
@@ -231,8 +266,8 @@ turn a fire into a blown fuse.
 | Part | State afterwards |
 |---|---|
 | **Fuse** | **Blown. Must be replaced.** |
-| Crowbar | **Survives.** It only conducts for a few microseconds before the fuse opens — far inside its surge rating |
-| 0.68 Ω burden resistor | Survives — the crowbar never let it see more than ~3 V |
+| Surge thyristor | **Survives.** It only conducts for a few microseconds before the fuse opens — far inside its surge rating |
+| 0.68 Ω burden resistor | Survives — the surge thyristor never let it see more than ~3 V |
 | Metering chip, ESP32, power supply | Untouched |
 | The clamp itself | Survives |
 
@@ -300,7 +335,7 @@ and a customer who stops trusting the product.
 
 ### The other half — make the mistake harder to make
 
-The fuse and crowbar fix Accident A. **Only geometry fixes Accident B.** All of
+The fuse and surge thyristor fix Accident A. **Only geometry fixes Accident B.** All of
 these are physical, not stickers:
 
 1. **Keep the two terminal blocks at opposite ends of the board**, with the

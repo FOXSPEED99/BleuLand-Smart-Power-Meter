@@ -51,7 +51,7 @@ values on it are calculated, not measured, and calculation cannot settle them.
 |---|---|
 | ✅ **Part number verified** — value, tolerance and stock confirmed against the supplier | HLW8032 · DS1307Z+ · crystal · all 6 commodity resistors · all 4 capacitors · 47 kΩ through-hole |
 | ⚠️ **Value calculated, must be measured** | `Rb` 0.68 Ω · `Rv5` 150 Ω · `Rf2`/`Rf3` 1.5 kΩ |
-| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · clamp fuse and crowbar · terminal blocks · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
+| ⬜ **Type specified, no specific part checked** | ESP32 board · current clamp · ZMPT101B · HLK-PM01 · MOV · fuse and clips · X2 capacitor · TVS diodes · clamp fuse and surge thyristor · terminal blocks · battery and holder · LEDs · ferrite bead · header strips · 470 µF capacitor · PCB |
 
 The ⬜ row is not a worry — those are commodity parts you will buy by
 description, and section 5 already says which ones must come from a reputable
@@ -156,7 +156,7 @@ part is what makes the whole low-voltage side safe to touch.
 | 15 | **X2 safety capacitor, 100 nF, 275 VAC** | 1 | **1,050** | Local / LCSC |
 | 16 | TVS diode **SMAJ5.0CA** (bidirectional) | 2 | **2,100** | LCSC / local |
 | 16a | **Fuse, 500 mA fast-acting, 250 VAC rated** (clamp input) | 1 | **1,100** | LCSC / local |
-| 16b | **Thyristor surge protector, ~58 V, bidirectional** (clamp input) | 1 | **1,100** | LCSC |
+| 16b | **SMP100LC-65** — TVS thyristor, 65 V, bidirectional, SMB (clamp input) | 1 | **1,100** | LCSC **[C2649282](https://lcsc.com/product-detail/Thyristor-Surge-Suppressors-TSS_STMicroelectronics-SMP100LC-65_C2649282.html)** |
 
 ⚠️ **Do not let a shop substitute "the same value" from an unmarked bin for items
 12, 14 and 15.** A counterfeit X2 capacitor or MOV is a fire risk, not a
@@ -166,10 +166,18 @@ an SMD fuse, most are only rated 63 V.
 ⚠️ **#16a and #16b are the anti-explosion pair on the clamp terminal.** If
 someone wires live and neutral into the clamp screws, the 0.68 Ω burden resistor
 finds itself directly across 230 V, and **hundreds of joules** land on the board
-before the house breaker can trip. The crowbar (#16b) holds the input down to
+before the house breaker can trip. The surge thyristor (#16b) holds the input down to
 about 3 V, and the fuse (#16a) clears the fault in microseconds. **Together they
 cost about US$ 0.40 and nothing in accuracy** — the fuse sits outside the
 measured path. Full explanation in Block 4 of the wiring guide.
+
+💡 **#16b goes by many names.** Searching "crowbar" gets you the metal tool —
+the component is named after it, because the old way to kill a fault was to
+throw a crowbar across two bus bars and short them out. On a supplier site look
+for **TVS Thyristor**, **TSPD**, **TSS**, or the brand names **SIDACtor**
+(Littelfuse) and **Trisil** (ST). On LCSC the category is
+**Thyristor Surge Suppressors (TSS)**. It is a **two-terminal SMB part** — same
+size and shape as the SMAJ5.0CA, so it solders exactly the same way.
 
 ⚠️ **#16a must be rated 250 VAC**, like #12. Most small SMD fuses are 63 V parts
 — across 230 V they arc over instead of interrupting, and then they are not a

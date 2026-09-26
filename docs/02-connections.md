@@ -304,6 +304,92 @@ slightly in time, which makes readings wrong on motor loads. Making these two
 bigger than the 1 kΩ voltage filter resistor compensates. 1.5 kΩ is the starting
 point — you tune it during calibration, and you always change both together.
 
+### Which socket pin is TIP, which is RING, which is SLEEVE?
+
+**Do not take this from a drawing, and do not take it from a datasheet.
+Measure it.** It takes two minutes and the answer is certain.
+
+Three reasons this matters more than it looks:
+
+1. **Pin numbers are not standard.** Every manufacturer numbers its own socket
+   differently. A symbol drawn for one manufacturer's socket will have the
+   numbers in the wrong places for another's, even though both are "3.5 mm
+   stereo".
+2. **PJ-320A is a generic design built by several factories** (XKB,
+   HanElectricity, SHOU HAN and others). They are not guaranteed to agree with
+   each other.
+3. **Getting RING wrong is a board respin.** See the failure table below.
+
+#### What the three contacts are
+
+Look at the plug on the end of the clamp cable. It has three metal bands
+separated by two black insulating rings:
+
+```
+        ┌─── TIP          the pointed end
+        │   ┌─── RING     the middle band
+        │   │   ┌─── SLEEVE   the long band nearest the cable
+        ▼   ▼   ▼
+   ════▓═║═▓═║═▓▓▓▓▓▓▓▓▓───────────  cable
+```
+
+#### The two-minute test — do this before you route the board
+
+**You need:** one socket, one SCT-013-000 clamp, a multimeter.
+
+1. Set the multimeter to **resistance (Ω)**.
+2. Plug the clamp fully into the socket.
+3. Measure between **every pair of socket pins** and write down all three
+   readings.
+4. **Two pins will read a few tens of ohms** — that is the clamp winding. Those
+   are **TIP** and **SLEEVE**.
+5. **One pin will read open circuit to both of them.** That is **RING**. The
+   clamp does not connect to it.
+
+That one measurement identifies the pin you must not get wrong.
+
+#### Telling TIP from SLEEVE
+
+**You need:** any 3.5 mm plug with a bit of cable on it — cut the end off an old
+headphone lead.
+
+1. Strip the three wires inside the cable.
+2. Multimeter on **continuity** (the beeping mode). Touch one probe to the
+   plug's **tip band** and the other to each wire until it beeps. That is the
+   **tip wire**. Repeat for the ring band and the sleeve band.
+3. Push that plug into the socket.
+4. Probe from the **tip wire** to each socket pin. The one that beeps is the
+   **TIP pin**. Repeat for the other two.
+
+Write the three pin numbers on paper and tape it to the wall. Done.
+
+#### What happens if you get it wrong
+
+| Mistake | Result | How bad |
+|---|---|---|
+| **TIP and SLEEVE swapped** | Signal polarity is inverted — the meter reads power flowing backwards | **Minor.** Fix in firmware, or turn the clamp around on the cable. |
+| **RING used as the signal pin** | The clamp's signal never reaches the chip, and the real winding is tied to ground. **Reads zero forever.** | **Board respin.** |
+
+So the whole point of the two-minute test is step 5 above: **find RING and stay
+off it.**
+
+💡 **Cheap insurance on the prototype run:** bring all three socket pins to
+three test pads with small solder-jumper links between them and the circuit. If
+the mapping turns out wrong, you move a blob of solder instead of re-ordering
+1,030 boards.
+
+#### About the symbol in your CAD library
+
+A schematic symbol's long bar at the bottom is conventionally the **sleeve** —
+it represents the plug's barrel. The two spring-shaped contacts are **tip** and
+**ring**. That convention gets you a guess, not an answer: **which spring is
+which depends on the manufacturer's drawing**, and the pin numbers attached to
+them belong to whichever part the symbol was built for.
+
+⚠️ **If your symbol and footprint came from a Switchcraft part, they are for a
+5-terminal, US$ 3.09 jack.** Replace both with the ones from the product page of
+the socket you are actually ordering before you route anything.
+
 ### Three things to get right about the socket
 
 **1. It must sit on the low-voltage side of the barrier.** The socket, its hole
@@ -590,6 +676,15 @@ them in before ordering 1,000.
 
 Buy a range of values for these three — the shopping list says which — so you can
 try them without re-ordering. Half a day of work that protects the whole run.
+
+## And one thing to confirm **before** you route the board
+
+| What | Why | How |
+|---|---|---|
+| **Which socket pin is TIP, RING and SLEEVE** | Pin numbers differ between manufacturers. Using RING as the signal pin means the board reads zero forever — a respin, not a firmware fix. | The two-minute meter test in Block 4. Use the exact socket you are ordering. |
+
+This one is different from the three above: those are tuned on working boards,
+this one has to be right **before the first board is made.**
 
 ---
 

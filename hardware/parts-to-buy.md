@@ -193,6 +193,47 @@ sits right next to it in the search results.
 ⚠️ **#18 stock is thin** — about 4,850 pieces against the 1,050 you need. Check
 it before ordering. #17 has around 46,000.
 
+### Footprints for these two
+
+**Good news: a 2-pin screw terminal footprint is just two holes at the pitch.**
+That is the whole thing. Unlike an audio socket, where every manufacturer puts
+the pins somewhere different, **every 5.08 mm 2-pin terminal block on the market
+has the same two holes 5.08 mm apart.** A footprint drawn for one brand fits
+another. This is exactly why this connector was the safer choice.
+
+**Where to get them, best first:**
+
+1. **EasyEDA / LCSC — the right source.** Every LCSC product page carries the
+   symbol and footprint for *that exact part number*. Open the product page and
+   look for the EasyEDA model, or search the C-number in EasyEDA. Export with
+   **File → Export → Altium Designer**. The footprint is tied to the part you
+   are actually buying, which is the whole lesson from the socket.
+   - KF128-5.08-2P community model:
+     [easyeda.com/component/a927b24d00314dd7bf99ecb8084cdd76](https://easyeda.com/component/a927b24d00314dd7bf99ecb8084cdd76)
+2. **SnapEDA (SnapMagic)** does not list the Cixi Kefa parts, but it has
+   **[KF301-2P](https://www.snapeda.com/parts/KF301-2P/Handson%20Technology/view-part/)**
+   — a different brand of the same **5.08 mm 2-pin** block. The holes are in the
+   same place. For 2.54 mm it has nothing useful; use EasyEDA.
+3. **Draw it yourself — five minutes, and the most trustworthy option.**
+
+**If you draw it, these are the only numbers that matter:**
+
+| | Mains (#17) | Clamp (#18) |
+|---|---|---|
+| **Hole spacing** | **5.08 mm** | **2.54 mm** |
+| Drill diameter | **1.3 mm** | **1.1 mm** |
+| Pad diameter | 2.2 mm | 1.6 mm |
+| Pad shape | Pin 1 square, pin 2 round | same |
+
+Drilling slightly generous (1.3 mm rather than the pin's ~1.0 mm) is deliberate:
+it swallows the small pin-size differences between brands, so any 5.08 mm block
+drops in. **The pitch is the one dimension that must be exact** — and it is
+printed in the part name.
+
+⚠️ Check the **body outline** against the datasheet before you place parts
+around it, so the housing does not overhang a neighbour. Datasheets are linked
+from each LCSC product page above.
+
 ### These two must be different parts. Here is exactly why.
 
 | | **#17 — mains** | **#18 — clamp** |

@@ -446,6 +446,80 @@ turn a fire into a blown fuse.
 
 ---
 
+### After the fuse blows — what state is the device in?
+
+**The board survives. One part is used up: the fuse.**
+
+| Part | State afterwards |
+|---|---|
+| **Fuse** | **Blown. Must be replaced.** |
+| Crowbar | **Survives.** It only conducts for a few microseconds before the fuse opens — far inside its surge rating |
+| 0.68 Ω burden resistor | Survives — the crowbar never let it see more than ~3 V |
+| Metering chip, ESP32, power supply | Untouched |
+| The clamp itself | Survives |
+
+**But the device does not keep working.** With the fuse open, no clamp signal
+reaches the chip. It will read **0 watts, forever**, until someone replaces one
+component.
+
+### Why there is no way to make it survive untouched
+
+It is worth understanding why, so nobody spends a month looking for a cleverer
+circuit.
+
+For the 0.68 Ω burden resistor to survive on its own, the fault current would
+have to stay under about **0.6 A**. At 230 V that needs **more than 380 Ω** in
+the loop. But that resistance sits in the clamp's own loop, and a clamp stops
+being accurate long before that — OpenEnergyMonitor measured about **10° of
+phase error at 120 Ω** and called it troublesome.
+
+> **The resistance that would save the resistor is far more than the resistance
+> that ruins the measurement.** There is no value that does both.
+
+A **resettable fuse** (PTC) does not help either. Those are rated for tens of
+volts, not 230, and they take tenths of a second to react. At mains voltage they
+burn rather than trip.
+
+**So something has to be sacrificed.** The design choice is only *what* — and a
+fuse is the cheapest, smallest, most predictable thing to give up.
+
+### The three things that actually help
+
+**1. Make the accident impossible — the 2.54 mm terminal.** Free, and it is the
+only measure that also covers the live-only case. This is the closest thing to a
+magic answer that exists.
+
+**2. Make the repair trivial.** If a fuse must blow, decide now who replaces it:
+
+| Choice | Board area | Repair |
+|---|---|---|
+| **Soldered SMD fuse** ← recommended for v1 | almost none | hot-air station, ~2 minutes, by you |
+| Sub-miniature fuse in a socket (TR5 / TE5 type) | ~10 × 5 mm | pulled out by hand, no tools |
+| 5 × 20 mm cartridge in clips | ~25 × 8 mm | by hand, but eats 12 % of the board |
+
+A device sealed inside a breaker panel needs an electrician to open it whatever
+happens, so the socket saves a couple of minutes, not the visit. **Solder it for
+v1**; revisit if field returns ever become common.
+
+**3. Make the device say what is wrong.** ⭐ **This is the cheap one, and it
+matters most.**
+
+A blown clamp fuse looks exactly like a house using no electricity. Without
+firmware help, the customer sees **"0 W"** and assumes the product is broken —
+or worse, believes it.
+
+The firmware must be able to tell those apart and report
+**"clamp signal lost"**. Two ways, both nearly free:
+
+- **Plausibility check.** A real house is never at exactly 0.000 W for hours
+  while mains voltage is present and healthy. Flag it.
+- **Switch contact**, if a socket is ever fitted in v2 — a direct, unambiguous
+  "nothing is plugged in" signal.
+
+**Turning a silent wrong reading into a clear alert is worth more than any
+component on this page.** It is the difference between a customer who calls you
+and a customer who stops trusting the product.
+
 ### The other half — make the mistake harder to make
 
 The fuse and crowbar fix Accident A. **Only geometry fixes Accident B.** All of

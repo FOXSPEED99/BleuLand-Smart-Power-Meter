@@ -182,10 +182,43 @@ fuse at all.
 | 17 | Screw terminal, 2-pin, **5.08 mm** (mains) | 1 | **1,050** | Local |
 | 18 | Screw terminal, 2-pin, **2.54 mm** (clamp) | 1 | **1,050** | Local |
 
-**The clamp terminal is deliberately the smallest one that still takes the clamp
-cable.** The clamp lead is about **0.3 mm²**. A 2.54 mm terminal accepts roughly
-**0.5 mm²** and no more, while mains wiring in a panel is **1.5 mm² at the very
-least** — it physically will not go in.
+### These two must be different parts. Here is exactly why.
+
+| | **#17 — mains** | **#18 — clamp** |
+|---|---|---|
+| Pitch | **5.08 mm** | **2.54 mm** |
+| Typical rating | **300 V, 10 A** | **150 V, 6 A** |
+| Wire it accepts | 1.5 – 2.5 mm² | **0.13 – 0.82 mm²** (26–18 AWG) |
+| What connects to it | Mains, **1.5 mm² minimum** | Clamp lead, **≈0.3 mm²** |
+
+**A 2.54 mm terminal cannot be used for mains, for three separate reasons — any
+one of them is enough:**
+
+1. **It is rated 150 V.** Your mains is **230 V**. That is outside the part's
+   rating from the moment it is installed, with no margin left for a surge.
+2. **Its two screws are only 2.54 mm apart.** A distribution board is
+   overvoltage category III, where 230 V needs roughly **3 mm of clearance**
+   between live and neutral. 2.54 mm is below that, so a surge can flash across
+   between the screws.
+3. **It accepts 0.82 mm² of wire at most.** Panel mains wiring is **1.5 mm² at
+   the very least.** The wire physically will not fit in the hole.
+
+### ⭐ Reason 3 is the "make the accident impossible" protection
+
+That third point is not a limitation — **it is the safety feature.**
+
+The clamp terminal's hole is **too small for a mains wire to enter.** An
+installer who reaches for the wrong terminal simply cannot push the wire in. No
+sticker, no training, no care required — the wire does not fit, so the accident
+does not happen.
+
+It is the same idea as a diesel pump nozzle being too fat for a petrol car's
+filler. The protection is the shape, not the warning.
+
+⚠️ **This only works if the two connectors are different.** Fit the same 2.54 mm
+part in both positions and you have thrown the protection away *and* put an
+under-rated part on the mains. Fit 5.08 mm in both and a mains wire slides
+straight into the clamp input — which is the fault that destroys the board.
 
 ⚠️ **This size difference is a safety interlock, not a convenience.** It is the
 main defence against the worst accident this device can have. Do not standardise

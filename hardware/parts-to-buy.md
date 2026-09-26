@@ -177,10 +177,21 @@ fuse at all.
 
 ## 6. Connectors
 
-| # | Item | Per device | **Order** | Where |
-|---|---|---|---|---|
-| 17 | Screw terminal, 2-pin, **5.08 mm** (mains) | 1 | **1,050** | Local |
-| 18 | Screw terminal, 2-pin, **2.54 mm** (clamp) | 1 | **1,050** | Local |
+| # | Item | LCSC | Buy link | Per device | **Order** | ~Each |
+|---|---|---|---|---|---|---|
+| 17 | **KF128-5.08-2P-AA** — 2-pin, **5.08 mm** (mains) | **C474952** | [C474952](https://www.lcsc.com/product-detail/C474952.html) | 1 | **1,050** | $0.10 |
+| 18 | **KF128-2.54-2P** — 2-pin, **2.54 mm** (clamp) | **C474920** | [C474920](https://www.lcsc.com/product-detail/Screw-terminal_Cixi-Kefa-Elec-KF128-2-54-2P_C474920.html) | 1 | **1,050** | $0.11 |
+
+Both are the **same Cixi Kefa KF128 family** — same green housing, same shape,
+same screw. Only the size differs, which is exactly what you want: they look
+related but they are visibly and physically different.
+
+⚠️ **#17 — do not grab `KF128-5.0-2P` (C474950) by mistake.** That one is
+**5.0 mm** pitch, not 5.08 mm. Different family member, different footprint,
+sits right next to it in the search results.
+
+⚠️ **#18 stock is thin** — about 4,850 pieces against the 1,050 you need. Check
+it before ordering. #17 has around 46,000.
 
 ### These two must be different parts. Here is exactly why.
 

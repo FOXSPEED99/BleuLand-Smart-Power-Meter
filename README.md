@@ -60,6 +60,7 @@ work that protects the entire production run.
 | [`docs/03-build-test-calibrate.md`](docs/03-build-test-calibrate.md) | Assembly, testing and calibration for production |
 | [`docs/04-risks-and-v2.md`](docs/04-risks-and-v2.md) | Risks, honest limitations, and the version 2 plan |
 | [`docs/05-reading-part-markings.md`](docs/05-reading-part-markings.md) | How to read the codes printed on resistors and capacitors, and what each of ours should say |
+| [`docs/06-clamp-input-protection.md`](docs/06-clamp-input-protection.md) | Why the clamp input has a fuse and a crowbar, and what happens if mains is wired into it |
 | **[`hardware/parts-to-buy.md`](hardware/parts-to-buy.md)** | **The shopping list — what to buy and how many** |
 | [`hardware/parts-to-buy.csv`](hardware/parts-to-buy.csv) | The same list as a spreadsheet |
 

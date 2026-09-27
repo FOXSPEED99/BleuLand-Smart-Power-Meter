@@ -301,6 +301,50 @@ The resistors on this board do **three completely different jobs**, and each job
 has a different rule. Buy the wrong *type* and the board still works — it just
 reads the wrong number, and you will never find out why.
 
+### Package choice: 0805 vs 1206 vs 2512
+
+**Decision: 1206.** The schematic was first drawn with 2512; here is the data
+behind changing it.
+
+| | **0805** | **1206** ← chosen | **2512** |
+|---|---|---|---|
+| Size | 2.0 × 1.25 mm | **3.2 × 1.6 mm** | 6.3 × 3.2 mm |
+| Price each (1 kΩ, 1 %) | $0.0028 | **$0.0042** | **$0.0122** |
+| 16 resistors × 1,000 units | **$45** | **$67** | **$195 – 470** |
+| Typical LCSC stock | 1–2 million | **130k – 320k** | **5,000 – 50,000** |
+| Board area, 16 resistors | 72 mm² | **141 mm²** | **464 mm²** |
+| Share of a 60 × 55 mm board | 2 % | **4 %** | **14 %** |
+
+**Why not 2512:**
+
+1. **Stock will stop you.** A 2512 precision value typically shows **~5,600
+   pieces** at LCSC. You need **4,200 of the 47 kΩ alone**. One order can empty
+   the shelf, and there is no second source at that size.
+2. **It eats 14 % of the board** — on a product whose main requirement is fitting
+   inside a breaker panel.
+3. **It is 3–7× the price** of 1206.
+4. **It is harder to solder with an iron, not easier.** A 2512 is a **1 W power
+   resistor**: four times the body of a 1206, and the ceramic pulls heat out of
+   the joint. You need a bigger tip, more heat and longer dwell, and cold joints
+   on the second end are common. *Easier to see and place — harder to heat.*
+   (With hot air, both are equally fine.)
+
+**Why 1206 over 0805:** it is **60 % longer and 28 % wider** — a real difference
+in the hand — and it costs only **2 % more board area** than 0805. That is the
+whole trade: a noticeably bigger part for almost nothing.
+
+**1206 is the largest package that still heats instantly under an iron.** Above
+it, thermal mass starts working against you.
+
+**Two deliberate exceptions:**
+
+- **`Rb` (0.68 Ω) stays 2512** — `FP-CSRN2512`, a Stackpole current-sense part.
+  Low temperature coefficient matters more here than size, and that part is a
+  better choice than the 1206 originally specified.
+- **`Rv1`–`Rv4` (47 kΩ)** are through-hole regardless — see 7b.
+
+---
+
 ### 7a. The measuring resistors — accuracy critical
 
 These five sit in the measuring path. Whatever they do, the reading does.

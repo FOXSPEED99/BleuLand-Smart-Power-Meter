@@ -79,6 +79,68 @@ board** instead and keep the full 8–10 years. Nothing else needs the underside
 
 ---
 
+## Choosing a smaller ESP32 board
+
+The dev board is the biggest single item, so it is the right thing to attack.
+Three candidates:
+
+| Board | Size | Area | vs DevKitC | USB on board | Antenna |
+|---|---|---|---|---|---|
+| **ESP32-DevKitC-32E** (current) | 54.4 × 27.9 | 1 518 mm² | — | ✅ | PCB trace |
+| **ESP32-CAM** (AI-Thinker) | 40.5 × 27 | 1 094 mm² | −28 % | ❌ **none** | PCB trace |
+| ⭐ **D1 Mini ESP32** | ≈ 34 × 26 | **≈ 884 mm²** | **−42 %** | ✅ | PCB trace |
+
+### Why not the ESP32-CAM
+
+The antenna reasoning is right — it carries a real **ESP32-WROOM-style module
+with a PCB trace antenna**, which is exactly the property that disqualified the
+SuperMini boards. But three things rule it out:
+
+**1. It has no USB-to-serial chip.** Programming means an external adapter, a
+jumper from IO0 to ground, a power cycle, the upload, removing the jumper, and
+another power cycle. Call it 60–90 seconds of handling per unit — **17 to 25
+hours across 1 000 boards**, with a much higher chance of getting it wrong.
+Keeping programming to a plugged-in USB cable was the reason for choosing a dev
+board in the first place.
+
+**2. The microSD socket is on the underside.** That kills the single biggest
+saving on this page. The board saves 424 mm² of outline but blocks roughly
+700 mm² of under-board space — **a net loss**.
+
+**3. Its free pins are a minefield.** Most of its GPIO is spoken for by the
+camera and the SD card. What is left is mostly strapping pins: **IO12 must be
+low at boot** or the flash voltage comes up wrong, **IO0** selects boot mode,
+**IO15** must be low for a silent boot, **IO16** is the PSRAM chip select, and
+**IO4 drives the onboard white flash LED**. We need five clean pins — SDA, SCL,
+the meter chip's serial line and two LEDs — and finding five without a trap is
+uncomfortable.
+
+On top of that, you pay for a camera socket, an FPC connector, an SD slot, PSRAM
+and a flash LED, fit all of it, and use none of it.
+
+### ⭐ Use a D1 Mini ESP32 instead
+
+Same ESP32-WROOM module and **the same PCB trace antenna**, but:
+
+- **USB and a serial chip on board** — programming stays a plugged-in cable
+- **Smaller than the ESP32-CAM**, ≈ 884 mm² against 1 094
+- **Flat underside** — the under-board space stays usable
+- **I²C is already on GPIO21 and GPIO22** — the same pins the schematic uses, so
+  the DS1307 wiring does not change at all
+- Around **US$ 3–4**, cheaper than either of the others
+
+**Saving against the DevKitC: ≈ 634 mm² of parts ≈ 1 270 mm² of board.** That is
+larger than every item in the reduction table except the under-board trick.
+
+> With this board the target becomes **≈ 5 900 mm², about 77 × 77 mm.**
+
+⚠️ **"D1 Mini ESP32" is a form factor, not a part number.** Several vendors build
+it with small differences — the same trap as the audio socket. **Pick one
+supplier, buy five, measure them, and confirm the underside is flat** before the
+outline is fixed.
+
+---
+
 ## The target is wrong, not the board
 
 **Stop aiming at "as small as possible". Aim at two specific numbers.**

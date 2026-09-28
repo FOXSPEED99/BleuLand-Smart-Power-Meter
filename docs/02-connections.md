@@ -375,6 +375,60 @@ enclosure wall**.
 
 **Leave every other pin unconnected.**
 
+## ⭐ You may move any of these signals to a different pin
+
+**None of the five signal pins above are fixed.** The ESP32 has a **GPIO
+matrix** — I²C, the serial port and the LED outputs can be routed to almost any
+pin. `D21` and `D22` are only the *defaults* the Arduino library picks. Moving
+I²C is one line of firmware:
+
+```c
+Wire.begin(SDA_PIN, SCL_PIN);   // instead of plain Wire.begin()
+```
+
+**If the layout would be easier with these signals somewhere else, move them.**
+
+### ❌ Four kinds of pin you must not move them to
+
+| Pins | Why not |
+|---|---|
+| **IO34, IO35, SENSOR_VP (IO36), SENSOR_VN (IO39)** | **Input only.** They physically have no output driver. I²C has to pull the line low, so it simply cannot work — and no firmware setting can fix it |
+| ⚠️ **IO12** | **Will stop the board booting.** IO12 sets the flash supply voltage at power-up and must be **low**. I²C lines sit **high** through their pull-ups, so putting SDA or SCL here guarantees a wrong flash voltage on every boot |
+| **SD2, SD3, CMD, CLK, SD0, SD1** (IO6–IO11) | Wired to the module's internal flash. Touching them crashes the chip |
+| **EN** | The reset pin, not a GPIO |
+
+⚠️ **IO12 is the dangerous one.** It sits in the middle of the header looking
+like any other GPIO, and nothing warns you — the board simply stops starting.
+
+### ✅ Safe pins to move to
+
+**IO32, IO33, IO27, IO14, IO13, IO25, IO26, IO16, IO17, IO18, IO19, IO23.**
+
+None of these have a boot-time job, and any of them will carry I²C, a serial
+line or an LED.
+
+### 💡 Putting everything on one header
+
+The module has two header rows. With the right choice of pins, **every signal
+can live on one of them**, which makes the layout much easier:
+
+| Signal | Suggested pin | Header position |
+|---|---|---|
+| 3.3 V | **3V3** | pin 1 |
+| Clock chip data (SDA) | **IO32** | pin 7 |
+| Clock chip clock (SCL) | **IO33** | pin 8 |
+| Green LED | **IO25** | pin 9 |
+| Blue LED | **IO26** | pin 10 |
+| Metering chip serial | **IO27** | pin 11 |
+| Ground | **GND** | pin 14 |
+| 5 V in | **EXT_5V** | pin 19 |
+
+`IO32` and `IO33` are the best pair for I²C: adjacent, no boot-time role,
+nothing else uses them.
+
+⚠️ **Still connect the ground pins on the other header.** No signals need to
+cross, but the supply return should have a short path on both sides.
+
 The board already has a USB socket, a USB-to-serial chip, an auto-reset circuit,
 a 3.3 V regulator and two buttons — so we don't fit any of those ourselves.
 **Use its BOOT button as the factory-reset button**; the firmware can read it.

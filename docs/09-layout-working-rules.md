@@ -290,3 +290,92 @@ These move parts off the top and onto the bottom, which is where the room is:
 | **Coin cell holder → SMD type, on the bottom** | Removes ~20 mm² of top space and 3 mm of height |
 
 None of these touch the circuit. They only move parts to the side that has room.
+
+---
+
+# The 470 µF capacitor — do not shrink the value
+
+It is 8 mm across and it is in the way. It is also **correctly sized**, and two
+independent things confirm it:
+
+- **The ESP32 draws up to 500 mA in WiFi transmit bursts**, and switches into
+  that demand in **microseconds**. The standard recommendation for an ESP32 on a
+  5 V rail is **470 µF to 1000 µF**.
+- **The HLK's own recommended output capacitor is 470 µF.** It is not padding —
+  it is the manufacturer-side value for stability.
+
+⚠️ **Cutting it to 100 µF buys a few mm² and pays for it with random resets in
+the field** — the worst failure there is. Intermittent, only in the customer's
+panel, and impossible to reproduce on your bench.
+
+## First: is it in the right place?
+
+It exists to serve **the ESP32's transient**, not to decorate the power supply
+output. If it currently sits next to the HLK and the ESP32 is 40 mm away, the
+track inductance between them cancels much of its benefit.
+
+> **Put it next to the ESP32's 5 V and GND pins.** If the ESP32 and the HLK are
+> near each other, one capacitor does both jobs.
+
+## Three ways to get the space back
+
+### 1. ⭐ Polymer aluminium, same 470 µF
+
+Same capacitance, much better part:
+
+| | Radial electrolytic (now) | Polymer aluminium |
+|---|---|---|
+| Footprint | 8 mm circle ≈ **50 mm²** | 7.3 × 4.3 ≈ **31 mm²** |
+| Height | **~11 mm** | **~4.2 mm** |
+| ESR | ~200 mΩ | **~20 mΩ** |
+| Life in a hot panel | dries out | **does not** |
+| Price | ~$0.05 | ~$0.50 |
+
+**38 % less area, a quarter of the height, and ten times lower ESR** — so it
+actually holds the rail up *better* than the part it replaces. About **US$ 450
+extra across 1 000 units**.
+
+⚠️ **Check the voltage rating.** The small polymer parts are 6.3 V, and 5 V on a
+6.3 V part is 79 % of rating — acceptable, but with little margin if the supply
+overshoots. Prefer **10 V** if the size still works.
+
+### 2. ⭐ Put it under the ESP32 module
+
+The module sits about **8.5 mm above the board** on its headers. A **4.2 mm
+polymer capacitor fits underneath with room to spare** — and that space is
+already spent.
+
+**Net cost in board area: zero.** Combined with option 1, this removes the part
+from the layout entirely.
+
+⚠️ It must be soldered and tested **before** the module goes on. Nothing under
+there can be reached afterwards.
+
+### 3. Shrink the transient instead of the capacitor
+
+The capacitor is sized for the **WiFi transmit burst**. Make the burst smaller
+and a smaller capacitor becomes genuinely correct rather than merely hopeful:
+
+```c
+WiFi.setTxPower(WIFI_POWER_11dBm);   // default is 19.5 dBm
+```
+
+The router is close and the device sends a few hundred bytes a minute — full
+transmit power is wasted here. Lower power means a lower peak current draw.
+
+**This must be proved on hardware, not assumed.**
+
+## The test that settles it
+
+**Design the footprint to accept both**, then let the prototype decide:
+
+1. Fit the **470 µF**. Put a scope on the 5 V rail.
+2. Trigger a **WiFi association** — the biggest burst the device ever makes.
+   Record the lowest point the rail reaches.
+3. Swap in **220 µF** and repeat.
+4. **The rail must stay above 4.5 V**, or the 3.3 V regulator on the dev board
+   starts dropping out.
+
+If 220 µF holds above 4.5 V with margin, the smaller part is **proved**, not
+guessed. That is a twenty-minute test on prototype board number one, and it is
+the only honest way to answer this.

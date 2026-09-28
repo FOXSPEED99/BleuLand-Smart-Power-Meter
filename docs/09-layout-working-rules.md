@@ -183,3 +183,110 @@ how good this one is.**
 
 Version 1 does not need to be good. It needs to be **finished, safe, and
 testable**. Make it those three things and send it.
+
+---
+
+# All SMD on the bottom layer
+
+A good decision — it is how mixed through-hole and surface-mount boards are
+really built, and it means **the whole SMD side reflows in one hotplate pass**
+later. It also freed the space that took the board from 85 to 75 mm.
+
+It brings three consequences that are easy to miss.
+
+## ⚠️ 1. Every through-hole lead now lands in the middle of the SMD side
+
+The big parts mount on top, but **their leads are soldered on the bottom** —
+which is now covered in surface-mount parts, already reflowed.
+
+**Rule: keep at least 2.5 mm of clear space around every through-hole pad on the
+bottom side.** An iron tip needs to reach those pads without touching a reflowed
+part beside them.
+
+This is one of the "empty spaces" you can see. **It is not waste.**
+
+## ⚠️ 2. The assembly order is now fixed and cannot be reversed
+
+1. Paste, place and **reflow the bottom side**
+2. Flip, insert the through-hole parts from the top
+3. **Hand-solder their leads on the bottom**, between the reflowed parts
+
+A hotplate cannot reflow a board that already has through-hole parts fitted, so
+**the SMD side is always first**. You will also want a simple jig or frame to
+hold the board at step 3, because it can no longer lie flat on its bottom face.
+
+## 🔴 3. The switching supply must not sit above the analog block
+
+This is the one that can quietly cost accuracy.
+
+The burden resistor, the filters and the metering chip are now all on the
+bottom. If the **HLK power supply sits on the top side directly above them**,
+its switching noise couples straight down through 1.6 mm of fibreglass into a
+**20 mV** signal.
+
+> **Rule: the power supply and the analog block must be in different regions of
+> the board in X-Y — not merely on different layers.**
+
+Also keep the **top layer under the analog block as unbroken ground pour**. On a
+two-layer board with a crowded bottom side, that pour is the only clean return
+path the differential pair has.
+
+---
+
+# Before shrinking any further
+
+## Check depth first — it is probably the real limit
+
+The goal is fitting inside the panel, and in a breaker panel the binding
+dimension is usually **depth**, not width.
+
+| Layer | Height |
+|---|---|
+| Bottom-side SMD parts | ~2.5 mm |
+| PCB | 1.6 mm |
+| **Tallest top part** (ZMPT or the power supply) | **~20 mm** |
+| Enclosure walls and clearance | ~4 mm |
+| **Total** | **≈ 28 mm** |
+
+**Measure the actual free depth in the target panel before doing anything else.**
+If 28 mm is the tight dimension, then **every millimetre taken off X and Y is
+wasted effort** — the device still will not fit, and the fix is a shorter part,
+not a smaller board.
+
+## Reshape, do not shrink
+
+**Below the enclosure's internal size, a smaller board buys nothing.** The box
+does not shrink with it.
+
+DIN and panel enclosures are **long and narrow**, not square — a 6-module box is
+roughly 105 mm wide by 90 mm deep inside. A **75 × 75 square may not fit a box
+that wants 90 × 50**, while a board of the same area in the right shape drops
+straight in.
+
+> **The question is not "how small can this board be".** It is **"what shape does
+> the smallest enclosure that fits actually want?"** Measure the box, then
+> reshape the outline to its slot.
+
+## Empty space that must stay empty
+
+Before filling a gap, check which kind it is:
+
+| Gap | Why it stays |
+|---|---|
+| **The 8 mm mains barrier** | Safety. Never fill it, never route across it |
+| ⚠️ **Around the ESP32 antenna** | **No copper at all** — no pour, no tracks, above or below. Fill it and the range collapses, which matters most inside a metal panel |
+| **2.5 mm around every through-hole pad on the bottom** | Iron access after reflow |
+| **In front of the terminal blocks** | A screwdriver has to reach the screws |
+| **Mounting holes and standoffs** | The enclosure needs them |
+
+## If you still want height back
+
+These move parts off the top and onto the bottom, which is where the room is:
+
+| Change | Gain |
+|---|---|
+| **Crystal → SMD 32.768 kHz** (3.2 × 1.5 mm) | Removes a through-hole can from the top |
+| **470 µF → SMD electrolytic or polymer** | Removes an 11 mm can |
+| **Coin cell holder → SMD type, on the bottom** | Removes ~20 mm² of top space and 3 mm of height |
+
+None of these touch the circuit. They only move parts to the side that has room.

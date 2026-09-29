@@ -647,3 +647,82 @@ Serial.println(WiFi.RSSI());   // dBm, less negative is better
 **A drop beyond about 6–8 dB means the keepout is costing you**, and the fix is
 board material, not firmware. This takes ten minutes and replaces every opinion
 on this page with a number.
+
+---
+
+# The USB port is at the wrong end — and it does not matter
+
+The module has the **antenna at one end and the USB socket at the other**. Put
+the antenna at the board edge and the USB socket points inward, into the
+components. Clearing a corridor in front of it costs days and may not work.
+
+**Do not clear the corridor. The problem is not real.**
+
+## Why: the module is socketed
+
+It sits on **female headers**. It **pulls out**.
+
+If a board ever needs reprogramming over USB, you **lift the module off, plug it
+into a laptop, and push it back**. Twenty seconds, no corridor, no cable
+gymnastics, no enclosure opening beyond the lid.
+
+**In-place USB access is unnecessary by construction.** That is what mounting on
+headers bought us, and it was already paid for.
+
+## And in production you would not use it anyway
+
+The right way to program a thousand units is **not** one at a time through an
+assembled board:
+
+1. **Program all 1,050 modules in batches before they are fitted** — a powered
+   USB hub takes ten at a time while you do something else.
+2. Fit the programmed modules to the finished boards.
+3. **Everything after that is over-the-air.** The firmware already carries two
+   application partitions for exactly this.
+
+Programming loose modules on a hub is **faster** than handling assembled boards,
+and it happens in parallel with the rest of assembly rather than after it.
+
+## Before redesigning anything, check whether it is even blocked
+
+The USB socket sits on the module, which sits **8.5 mm above the main board** on
+its headers, plus the module's own 1.6 mm, plus the connector body.
+
+> **The centre of the USB plug is roughly 11–12 mm above your PCB.**
+
+A cable's moulded end is about 12 mm across, so it occupies roughly **6 mm to
+18 mm** of height. **Anything under about 6 mm tall passes underneath it.**
+
+So the only things that can actually block the port are the **tall through-hole
+parts** — the power supply, the transformer, the fuse holders. The small stuff
+in front of it is not in the way at all.
+
+**Measure before you move anything.**
+
+## If you do want the port at an edge, reshape rather than clear
+
+The module is **54.4 mm long**. For both ends to reach a board edge, the board
+needs to be **about 52 mm** in that direction — antenna overhanging one short
+edge, USB socket at the other.
+
+That makes the board roughly **52 × 105 mm** for the same area as 75 × 75.
+
+⭐ **And that shape is a better fit for the enclosure anyway.** DIN and panel
+boxes are long and narrow, not square — so the same change solves the connector
+problem *and* the enclosure problem at once.
+
+## The decision
+
+| Option | Cost | Works? |
+|---|---|---|
+| **Leave it. Pull the module out to reprogram** | **nothing** | **Yes, by construction** |
+| Program modules in batches before fitting | nothing | Yes, and faster |
+| Reshape the board to ~52 × 105 | a layout pass | Yes, and fits the box better |
+| Clear a corridor in front of the port | **days** | **Uncertain** |
+
+The bottom row is the one being worked on now. It is the only one that is both
+expensive and unproven.
+
+> ⚠️ **"Not sure it is going to work at the end" is the signal to stop.** When
+> the cost is high and the outcome is uncertain, the answer is a different
+> approach, not more hours.

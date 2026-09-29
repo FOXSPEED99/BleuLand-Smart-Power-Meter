@@ -379,3 +379,118 @@ transmit power is wasted here. Lower power means a lower peak current draw.
 If 220 µF holds above 4.5 V with margin, the smaller part is **proved**, not
 guessed. That is a twenty-minute test on prototype board number one, and it is
 the only honest way to answer this.
+
+---
+
+# Ground pours — what to do on this board
+
+**Short answer: both. Two separate pours, on both layers, joined only at `R7`.**
+
+Not two layers — **two regions**. The split is in the copper, not in the stack-up.
+
+## The structure
+
+Because all the surface-mount parts moved to the bottom, the board divides
+naturally:
+
+| Layer | Job |
+|---|---|
+| **Bottom** | Components and **signal routing**. Pour the leftover gaps with ground |
+| **Top** | **The return path.** Pour as much solid ground as possible. Route here only what cannot go on the bottom |
+
+Then divide the board surface into **three regions**, on **both** layers:
+
+```
+ ┌──────────────────────┬─────────────────────────────┐
+ │   MAINS REGION       ║   ANALOG_GROUND pour        │
+ │   no pour at all     ║   burden, filters, HLW8032, │
+ │                      ║   ZMPT secondary            │
+ │   fuse, MOV, X2,     ║─────[R7]────────────────────│
+ │   PSU, terminals     ║   GND pour                  │
+ │                      ║   ESP32, DS1307, LEDs, 5 V  │
+ └──────────────────────┴─────────────────────────────┘
+          ▲ 8 mm barrier, slot routed, NO copper either side
+```
+
+**Both pours exist on both layers**, stitched top-to-bottom with vias every
+5–10 mm.
+
+## The seven rules
+
+**1. The two pours must not touch anywhere except through `R7`.**
+That is the whole point of the split. Check it after every pour rebuild — a
+polygon that reflows can silently bridge them.
+
+**2. Put `R7` right next to the metering chip's ground pin.**
+Not in a corner, not wherever it fits. The analog return currents all converge
+at that chip, so that is where the two grounds should meet. Everything else
+follows from this.
+
+**3. No trace may cross the boundary — except one.**
+A signal that crosses has to send its return current the long way round through
+`R7`, which makes an enormous loop.
+
+The **only** trace allowed to cross is the metering chip's **serial output**
+(chip `TX` → the divider → the ESP32). That is a **4800 baud** signal; its return
+current can take the scenic route and nothing cares.
+
+⚠️ **No analog signal ever crosses.** `I1P`, `I1N`, `VP`, the burden and the
+filters all stay entirely inside the analog region.
+
+**4. Solid, unbroken pour on the top layer under the whole analog block.**
+The analog parts and their traces are on the bottom, so the top pour is their
+return path. **Do not route anything through that area on the top layer** — a
+single trace cutting across forces the return current to detour around it.
+
+**5. No pour at all in the mains region.**
+Copper poured near mains reduces clearance in ways that are hard to see and hard
+to check. Keep mains as discrete wide traces with generous space, and keep both
+pours **at least 8 mm** clear of anything mains-connected.
+
+**6. No copper under or around the ESP32 antenna — on either layer.**
+No pour, no traces, no stitching vias. Filling it collapses the range, which
+matters most inside a metal panel.
+
+**7. ⭐ Use thermal relief on every through-hole ground pad.**
+
+This one is about building a thousand boards, not about electrical performance.
+A pad connected **solidly** to a large pour drains heat from the iron so fast
+that you get cold joints — and cold joints on ground are the hardest fault to
+find afterwards.
+
+**Set thermal relief spokes for every through-hole pad on a pour.** Solid
+connections are only for surface-mount pads, which have far less thermal mass.
+
+## Where to put the boundary
+
+Follow the signal chain, not the geometry:
+
+| Over **ANALOG_GROUND** | Over **GND** |
+|---|---|
+| Clamp terminal, fuse, surge thyristor | ESP32 module |
+| Burden resistor, both filter resistors | DS1307, crystal, coin cell |
+| All four filter capacitors | Both LEDs and their resistors |
+| Both TVS diodes | The 5 V rail, bulk capacitor, decoupling |
+| ZMPT secondary, 150 Ω, its filter | The level-shift divider's lower resistor |
+| **The metering chip** | |
+
+## Check these after the pours are built
+
+- [ ] `GND` and `ANALOG_GROUND` connect **only** through `R7`
+- [ ] `R7` sits beside the metering chip's ground pin
+- [ ] Only one trace crosses the boundary, and it is the slow serial line
+- [ ] No trace runs across the top-layer pour under the analog block
+- [ ] Both pours are ≥ 8 mm from anything mains-connected
+- [ ] No copper of any kind in the antenna keepout
+- [ ] Every through-hole ground pad has thermal relief spokes
+- [ ] Stitching vias every 5–10 mm, especially around the analog block
+
+## Worth knowing for v2
+
+**A 4-layer board with a dedicated ground plane makes most of this go away.**
+The plane is solid by construction, the split becomes unnecessary, and the
+return path under every signal is automatic.
+
+It roughly doubles the bare-board cost — about **US$ 1 more per device**, or 7 %
+of the bill of materials. Not for v1, but it is the single change that would
+most improve the analog performance and most simplify the layout.

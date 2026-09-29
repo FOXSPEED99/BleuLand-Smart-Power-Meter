@@ -494,3 +494,81 @@ return path under every signal is automatic.
 It roughly doubles the bare-board cost — about **US$ 1 more per device**, or 7 %
 of the bill of materials. Not for v1, but it is the single change that would
 most improve the analog performance and most simplify the layout.
+
+---
+
+# The ESP32 antenna keepout
+
+## The antenna is not under the metal can
+
+Looking at the module, it is easy to think the shield covers everything. It does
+not.
+
+- **The silver can** covers the chip, the flash, the crystal and the power
+  circuitry.
+- **The antenna is the strip at the far end, past the can** — a meandering
+  copper trace on the module's own small circuit board, hidden under black
+  solder mask. That is why it does not look like an antenna.
+
+So the antenna **is** exposed, in the sense that matters. It radiates through
+the end of the module, away from the can.
+
+## The rule, with the number
+
+Espressif's requirement:
+
+> **No copper on any layer, no components, and no board material within 15 mm of
+> the antenna area.**
+
+That means no ground pour, no traces, no power fill, no stitching vias, no
+parts — **on either layer** — and **no FR-4 underneath it either**, because the
+board material itself detunes the antenna to a lower frequency.
+
+⚠️ **Getting this wrong costs about 10 dB**, which is roughly **a third of the
+range**. It is described as the single most common ESP32 antenna failure. Inside
+a metal breaker panel, that is the difference between a device that connects and
+one that does not.
+
+## What it means for this board
+
+The module sits about **8.5 mm above our PCB** on its headers. **8.5 mm is well
+inside the 15 mm keepout** — so if our board extends underneath the antenna,
+there is FR-4 and probably copper right in the forbidden zone.
+
+**Two ways to satisfy it. Pick one.**
+
+### Option A — overhang the board edge (preferred)
+
+Place the module so the **antenna end hangs off the edge** of our PCB entirely.
+Nothing underneath it at all.
+
+⚠️ **Account for it in the enclosure.** The module then sticks out past the PCB
+outline, so the box has to be longer than the board in that direction. Measure
+from the module, not from the PCB.
+
+### Option B — cut the board away underneath
+
+If the outline cannot give up the space, keep the module over the board but
+**route the PCB material away** in a U-shape under and beside the antenna — no
+copper *and* no FR-4 left there.
+
+This is Espressif's own fallback, and it keeps the module inside the outline.
+
+## Orientation, once the keepout is satisfied
+
+- **Point the antenna end toward the panel door or the open side** — not into
+  the back of a metal enclosure.
+- **No metal within 15 mm** inside the finished box: no screws, no threaded
+  inserts, no metal standoffs near that end.
+- **Keep the plastic thin** around the antenna. Plastic detunes far less than
+  copper or FR-4, but thick material right against the antenna still costs
+  something.
+
+## The honest part
+
+Inside a metal consumer unit the antenna is already working in a partly
+shielded space — that is
+[risk 1.10](04-risks-and-v2.md) and it does not go away.
+
+**The keepout is what keeps that a reduction in range rather than a failure.**
+It is not an optimisation. It is the thing that makes the rest survivable.

@@ -572,3 +572,78 @@ shielded space — that is
 
 **The keepout is what keeps that a reduction in range rather than a failure.**
 It is not an optimisation. It is the thing that makes the rest survivable.
+
+## "But the headers hold it 8.5 mm above the copper"
+
+**An antenna does not need to touch anything to be ruined by it.**
+
+This is the intuition that catches almost everyone, because "not touching means
+not connected" is completely correct for shorts and completely wrong for radio.
+
+### The numbers
+
+At 2.4 GHz the wavelength is **123 mm**. The antenna's **near field** — the
+region where it is still building the field rather than radiating it — reaches
+out about:
+
+> λ ÷ 2π = 123 ÷ 6.28 ≈ **20 mm**
+
+**Espressif's 15 mm keepout is that near-field boundary.** Inside it, metal does
+not merely reflect the signal — it becomes **part of the antenna**.
+
+**8.5 mm is roughly a fourteenth of a wavelength.** In radio terms that is not
+"a good distance". It is the strongest part of the near field.
+
+### Think of it as a capacitor
+
+Two conductors, separated by a gap, not touching. That is a capacitor — and it
+couples **precisely because** the plates do not touch.
+
+A copper pour 8.5 mm under a 2.4 GHz antenna is exactly that. The gap does not
+break the coupling; it sets its value.
+
+Three things happen:
+
+1. **Detuning.** The resonant frequency shifts away from 2.4 GHz, so the
+   module's matching network no longer matches, and power reflects back into the
+   chip instead of leaving as radio.
+2. **Absorption.** Currents induced in the copper turn signal into heat.
+3. **Pattern distortion.** The radiation pattern gets pushed sideways, leaving
+   nulls in directions that used to work.
+
+### ⚠️ And it is not only the copper
+
+**The FR-4 itself detunes the antenna.** Board material has a dielectric
+constant around 4.4 against air's 1, and it drags the resonant frequency down.
+
+> **Clearing the copper but leaving the board underneath is not enough.**
+
+That is exactly why Espressif's fallback is to **cut the board material away**,
+not simply to remove the pour.
+
+### So is the 8.5 mm worth anything?
+
+**Yes — 8.5 mm is genuinely better than zero.** The effect falls off with
+distance, so it will not cost the full 10 dB.
+
+But it is **a bit over half** the required clearance, sitting in the region where
+the coupling is strongest. Expect to lose a meaningful part of that 10 dB, in a
+metal panel where there is nothing spare to lose.
+
+**The header height is not a substitute for the keepout.** Both options stand:
+overhang the edge, or cut the board away underneath.
+
+### Settle it by measuring, on prototype number one
+
+```c
+Serial.println(WiFi.RSSI());   // dBm, less negative is better
+```
+
+1. Read RSSI with the module **held in free air**, connected to the router.
+2. Read it again with the module **fitted to the board, in the enclosure, in the
+   actual panel**.
+3. Compare.
+
+**A drop beyond about 6–8 dB means the keepout is costing you**, and the fix is
+board material, not firmware. This takes ten minutes and replaces every opinion
+on this page with a number.

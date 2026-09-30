@@ -726,3 +726,104 @@ expensive and unproven.
 > ⚠️ **"Not sure it is going to work at the end" is the signal to stop.** When
 > the cost is high and the outcome is uncertain, the answer is a different
 > approach, not more hours.
+
+---
+
+# Does the order matter? Yes — this is where the schematic lies
+
+**In the schematic, a net is a dot.** Everything on it is the same point, and
+tapping the 5 V from the HLK's pad or the capacitor's pad is identical.
+
+**On the PCB, a net is a road.** It has a length, and every component sits at a
+specific place along it. Where a part sits decides what it can do.
+
+## Copper is not a wire
+
+A typical 0.5 mm trace in 1 oz copper has roughly:
+
+- **1 milliohm per millimetre** of resistance
+- **1 nanohenry per millimetre** of inductance
+
+The resistance barely matters here. **The inductance does**, because the ESP32
+switches 400 mA in about a microsecond:
+
+> V = L × di/dt = 20 nH × 400 000 A/s ≈ **8 mV over a 20 mm trace**
+
+Small on its own — but that number is exactly what the capacitors exist to
+prevent, and it grows with every millimetre of copper the burst current has to
+travel through.
+
+## The rule
+
+> **Current must flow *through* the decoupling, not *past* it.**
+
+Order the parts along the current's journey, **smallest capacitor last**:
+
+```
+  HLK 5V pad ──→ 470 µF ──→ 100 nF ──→ ESP32 5V pin
+```
+
+And mirror it on the way back:
+
+```
+  ESP32 GND ──→ 100 nF ──→ 470 µF ──→ HLK GND
+```
+
+**So: take the ESP32's 5 V from the 100 nF's pad.** Route the HLK to the 470 µF
+first, the 470 µF to the 100 nF, and the 100 nF sits **right at the ESP32's
+pin**.
+
+### ❌ What not to do
+
+Run one trace from the HLK across the board and hang the capacitors off it as
+side branches.
+
+That is electrically the same net and it will work — but the burst current now
+flows **past** the capacitors instead of **through** them, down a longer path,
+and they do much less than they should. This is one of the standard causes of
+the brownouts the 470 µF was chosen to prevent.
+
+## ⭐ Branch the quiet loads upstream of the noisy one
+
+This is the refinement that matters most on this board. The ESP32 is a **bursty**
+load. The metering chip and the clock chip are **quiet and sensitive**. Do not
+make them share copper with the bursts:
+
+```
+  HLK 5V ──→ 470 µF ──┬──→ 100 nF ──→ ESP32        (noisy, bursty)
+                      │
+                      ├──→ FB1 ──→ 10 µF ──→ 100 nF ──→ HLW8032   (sensitive)
+                      │
+                      └──→ DS1307                   (quiet)
+```
+
+**Branch at the 470 µF node, not at the ESP32's pin.** The ESP32's burst current
+then never flows through the copper feeding the measuring chip.
+
+The ferrite bead already blocks high-frequency noise from reaching the metering
+chip — **branching upstream is what stops the low-frequency part getting there
+too.**
+
+## Where this matters most on this board
+
+| Place | Order, in the direction current flows |
+|---|---|
+| **Metering chip supply** | FB1 → 10 µF → **100 nF right at the VDD pin** |
+| **ESP32 supply** | 470 µF → 100 nF → module pin |
+| **Clock chip supply** | branch from the 470 µF node → 100 nF at its pin |
+
+⚠️ **The 100 nF nearest a chip must be within a few millimetres of that chip's
+pin**, with the shortest possible path back to ground. Past about 10 mm it stops
+being decoupling and becomes decoration.
+
+## The short version
+
+**Answer to the question: yes, any of the three pads will work, and the device
+will run.**
+
+But **take it from the 100 nF** — the last capacitor before the load. That way
+the burst current passes through every capacitor on its way in, which is the
+entire reason they are there.
+
+> **In the schematic, a net is a dot. On the PCB, a net is a road.** Draw the
+> current's journey, not just the connection.

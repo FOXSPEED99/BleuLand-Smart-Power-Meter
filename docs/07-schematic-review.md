@@ -155,3 +155,109 @@ to remove.
 9. Re-run **Update PCB from Schematic** — then start layout
 
 **Items 1–3 are the ones that cost money if missed.**
+
+---
+
+# Review 2 — 30 September 2026
+
+Netlist rebuilt from the updated schematic: **44 components, 59 nets.** All 44
+are placed on the PCB.
+
+## ✅ Fixed since review 1
+
+| # | Was | Now |
+|---|---|---|
+| **1** | Both terminal blocks the same part | **Clamp is a JST-XH (`B2B-XH-A`)** — see below |
+| **4** | 47 kΩ mains resistors surface-mount | **Through-hole axial** `AXIAL_L9.0-D3.2_P12.70` ✓ |
+| **5** | Two of three ESP32 grounds unconnected | **All three connected** — pins 14, 32, 38 ✓ |
+
+## ✅ The new pin assignment is clean
+
+| Signal | Pin | |
+|---|---|---|
+| SCL | IO22 | ✓ safe |
+| SDA | IO23 | ✓ safe |
+| Metering chip serial | IO16 | ✓ safe |
+| Green LED | IO19 | ✓ safe |
+| Blue LED | IO18 | ✓ safe |
+
+**No strapping pins, no input-only pins.** IO12 avoided. Nothing here can stop a
+board booting.
+
+## ⭐ The JST-XH is a better fix than the one I recommended
+
+I suggested a 2.54 mm terminal block to make a mains wire physically not fit.
+**A JST-XH does that job harder:** the contact is crimped inside a polarised,
+latching housing, and there is no opening a stripped mains conductor can be
+pushed into at all.
+
+### So removing the clamp fuse (`F2`) is now defensible
+
+`F2` and the surge thyristor existed for **one accident: mains wired into the
+clamp input.** With a crimped JST housing that accident is not merely
+discouraged, it is **not possible**.
+
+**Recorded as a deliberate decision, not an omission.** The mechanical exclusion
+replaced the electrical protection, and mechanical exclusion is the stronger of
+the two.
+
+**`D4` (SMAJ5.0CA) still covers the remaining real risk** — static and surge
+coupling onto a 1–2 m clamp cable running inside a panel full of switching.
+That one must stay.
+
+### ⚠️ But it adds an assembly step that needs costing
+
+The clamp's moulded plug is cut off, and the two wires now need **crimped JST-XH
+contacts in a housing** instead of going under a screw.
+
+| | |
+|---|---|
+| Crimp contacts (×2) + housing | ~US$ 0.05 per unit |
+| Crimp tool | ~US$ 25, once |
+| Time | ~30 s per unit → **~9 hours over 1 000 units** |
+
+A proper crimp is **more reliable than a screw terminal** long-term — it is
+gas-tight and cannot loosen. But budget the tool and the hours, and **buy a real
+ratcheting crimper**, not pliers; a bad crimp is an intermittent connection that
+will not show up until the device is in a wall.
+
+💡 **Cheaper alternative:** buy pre-made JST-XH pigtails and solder them to the
+clamp wires with heatshrink. No crimp tool, no crimp skill, and probably faster.
+
+## 🔴 Blocking — do these before the next PCB update
+
+### 1. Two components are unannotated: `J?` and `U?`
+
+The clamp connector and the ESP32 module both still have **`?`** designators.
+
+Altium cannot run a clean engineering change order or produce a correct bill of
+materials with unannotated parts, and the PCB will not track them properly.
+
+**Run Annotate. Thirty seconds, and it is blocking everything downstream.**
+
+### 2. Nine resistors are still on 2512 footprints
+
+The package decision was **1206**. Still on 2512:
+
+> `R1`, `R2`, `R3`, `R6`, `R7`, `R9`, `R11`, `R15`, `R17`
+
+Already correct: `R12` and `R14` (1206), `R5`/`R8`/`R10`/`R13` (through-hole),
+and **`R16` stays 2512 on purpose** — the Stackpole current-sense part.
+
+Leaving these mixed means the board and the parts list still describe different
+products.
+
+## 🟠 Still open from review 1
+
+| # | Item |
+|---|---|
+| **6** | **`U2.8` (HLW8032 `RX`) is still floating.** `PF` on pin 7 floating is fine — it is an output. `RX` is an input; give it a pull resistor, or at least an unpopulated footprint to 5 V and to ground |
+| **7** | **`C4` is still through-hole** (`CAPRR508W50L508T318H762`) while `C2`, `C6`, `C8` are 1206. It is a decoupling capacitor — leads are inductance |
+
+## Order of work
+
+1. **Annotate** — clears `J?` and `U?`
+2. **Nine resistors → 1206**
+3. `C4` → 1206
+4. Resolve `U2.8`
+5. Update PCB from schematic, then carry on with layout

@@ -64,6 +64,7 @@ work that protects the entire production run.
 | **[`docs/07-schematic-review.md`](docs/07-schematic-review.md)** | **Review of the drawn schematic against this documentation — fix list before PCB layout** |
 | [`docs/08-board-size.md`](docs/08-board-size.md) | Where the board area goes, how to get it down, and what size to actually aim for |
 | [`docs/09-layout-working-rules.md`](docs/09-layout-working-rules.md) | How to stop a PCB layout turning into endless optimisation, and how to know when it is done |
+| **[`docs/10-pcb-review.md`](docs/10-pcb-review.md)** | **Review of the PCB layout — clearance violations, missing pours, fix order** |
 | **[`hardware/parts-to-buy.md`](hardware/parts-to-buy.md)** | **The shopping list — what to buy and how many** |
 | [`hardware/parts-to-buy.csv`](hardware/parts-to-buy.csv) | The same list as a spreadsheet |
 

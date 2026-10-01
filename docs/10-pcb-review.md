@@ -571,3 +571,105 @@ Two related calls:
   to bridge.
 - **Keep the top layer empty inside the mains zone.** That emptiness is what
   makes the barrier a single-layer problem.
+
+---
+
+# The 39 silkscreen DRC errors — what to do with them
+
+Measured from the same file. Counts here are silk-object-to-pad pairs, which
+Altium groups more coarsely, so the totals differ from the error count in the
+tool. The split is what matters.
+
+## Ink actually on a pad opening: 4 spots, 2 components
+
+| Component | Layer | Spots |
+|---|---|---|
+| `D1` | TopOverlay | 2 |
+| `D2` | TopOverlay | 2 |
+
+The LED outline circles cross their own pads. Nothing else on the board does.
+
+## Merely closer than the rule, no ink on a pad: 138 spots, 34 components
+
+| Gap | Components |
+|---|---|
+| 68 µm | `Y1` |
+| 98 µm | `R12`, `R7`, `FB1` |
+| 128 µm | `D1`, `D2` |
+| 138 µm | `R5`, `R8`, `R10`, `R13` |
+| 149 µm | `U2` |
+| 155 µm | `C4` |
+| **173 µm** | **27 components** — `C1`, `C2`, `C6`–`C12`, `R1`–`R17`, `D3`, `D4` |
+| 199 µm | `IC1` |
+
+Twenty-seven components sharing one figure to the micron is one library
+convention, not 27 problems. The IPC-generated footprints place silk 6.8 mil
+from the pad; Altium's default rule wants 10 mil.
+
+## Solder mask slivers: zero
+
+Every mask opening is clear of its neighbours. Pad **rotation** has to be
+applied to get this right — the rotation is a double at offset 52 of the pad
+record. Without it a 270°-rotated SOIC's pads appear to overlap and the check
+reports six slivers on `U2` that do not exist.
+
+## Two findings that are not silkscreen and are real
+
+- **`J1`'s third pad has no annular ring at all**: 1.10 mm pad, 1.10 mm hole.
+  The fab will flag it independently. Third reason to delete it, after "no
+  net" and "closest low-voltage copper to the mains".
+- **Both mounting holes are plated with floating copper**: 2.2 mm hole,
+  2.5 mm pad, no net. Make them non-plated.
+
+Annular rings everywhere else are fine — thinnest after `J1` are `IC1` and
+`C3` at 175 µm, against a 100 µm floor.
+
+## Why not fix the libraries
+
+Silkscreen ink on a pad has exactly one failure mode: it stops solder
+wetting. So the only question each error raises is whether ink will land on a
+pad.
+
+For the 138, it will not. The ink is 68–199 µm clear as drawn, fabs hold silk
+registration to roughly ±100–150 µm, and JLCPCB and essentially every other
+fab **automatically clip silkscreen that overlaps a mask opening** in CAM. The
+worst realistic outcome is a slightly chopped outline, never a bad joint.
+
+For the 4 on `D1`/`D2` it will, so the fab clips them and those LED outlines
+come out with gaps. Cosmetic — but it is polarity marking on a
+hand-assembled product, so fix it.
+
+The cost of editing 34 footprints is not the half hour. It is forking 34
+IPC-generated footprints away from their originals, after which every library
+update, new board and BOM cross-check has to know about the fork. That is a
+permanent tax to silence a cosmetic warning.
+
+## What to do
+
+1. Set `Silk To Solder Mask Clearance` to **0.05 mm** instead of 0.254 mm. The
+   138 cosmetic spots go; the 4 real overlaps stay visible.
+2. Fix `D1` and `D2` **on the PCB**, not in the library — nudge or shorten the
+   two silk arcs that cross the pads.
+3. Delete `J1`'s third pad.
+4. Make both mounting holes non-plated.
+
+## The real finding behind the 39 errors
+
+None of the 39 was an unrouted net — but `C7`'s `ANALOG_GROUND` pad is
+unrouted, proven by walking the copper. Altium's **batch** DRC has a per-rule
+checkbox list and many rules ship unticked. Confirm these are ticked in
+`Tools → Design Rule Check`:
+
+- `Un-Routed Net` — would have caught `C7`
+- `Clearance` — the mains barrier
+- `Short Circuit`
+- `Minimum Annular Ring` — would have caught `J1`
+- `Hole To Hole Clearance`
+- `Minimum Solder Mask Sliver`
+- `Board Outline Clearance`
+
+Read the rule names, not the error count. Thirty-nine errors in one cosmetic
+rule is a single decision made once. One error in `Clearance` or
+`Un-Routed Net` is a board that does not work, or one that hurts someone.
+Run DRC at the end of every session — not for the silkscreen, but so the day
+a `Clearance` error appears you see it that day.

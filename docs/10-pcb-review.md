@@ -305,3 +305,168 @@ that went with it are both closed.
 4. Change `C4` to 1206.
 5. Pour `GND` and `ANALOG_GROUND`, both layers, single tie at `R7`.
 6. Stitch vias along the pour boundary.
+
+---
+
+# Spacing and isolation, measured in detail — 1 October 2026
+
+Same file as Review 2. This pass measures the board outline, the holes, the
+cross-layer overlap and the effect of solder fillets, which the earlier
+numbers ignored.
+
+## Clearance is a property of the assembled board, not the drawn one
+
+Altium measures drawn copper. The standard applies after assembly. On a
+hand-soldered through-hole pad the fillet grows roughly **0.4 mm radially**
+past the pad edge, so any gap with a through-hole pad on both sides loses
+about **0.8 mm** when you solder it.
+
+No design rule check in any tool models this. You have to do it by hand.
+
+| | drawn | soldered | reinforced needs |
+|---|---|---|---|
+| `F1` live pad ↔ `J1` unnetted pad | 5.62 mm | **4.82 mm** | 5.5 mm clearance |
+| `F1` live pad ↔ `J1` `ANALOG_GROUND` pad | 6.34 mm | **5.54 mm** | 5.5 mm clearance |
+
+`NetC5_1` is fused live. `J1` is the CT clamp connector — the wire the
+installer handles. This is the worst gap on the board to get wrong, and as
+built it fails.
+
+### What each candidate fix actually buys
+
+Simulated by translating `J1`'s pads and re-measuring:
+
+| Change | New tightest mains → low voltage |
+|---|---|
+| Delete `J1`'s unnetted pad only | 6.34 drawn / **5.54 soldered** — 0.04 mm margin. Not enough. |
+| Move `J1` 3 mm in −X | 6.71 drawn / 6.31 soldered |
+| Move `J1` −3 mm **and redraw its two tracks** | 7.04 drawn / **6.64 soldered** |
+
+The 6.71 mm in the middle row is an `ANALOG_GROUND` **track** at X 60.8 /
+Y 95.7 that feeds `J1`. Dragging the connector without redrawing the trace
+leaves that track where it is and gains almost nothing.
+
+Afterwards the barrier's narrowest point is the ZMPT region — `T1`'s primary
+pad against the `ANALOG_GROUND` and `NetC9_2` tracks at X 57 / Y 68 —
+at 6.64 mm soldered against 5.5 mm required.
+
+Alternative if `J1` is awkward: move `F1` 3 mm in +X. Its right clip lands at
+X 90.25 and `P1`'s pad at X 91.71 is the same net, so nothing is violated.
+
+## Mains to mains passes everywhere, fillets included
+
+| drawn | soldered | ΔV across the gap | needs | margin |
+|---|---|---|---|---|
+| 2.48 | 1.68 | 114 V | 1.0 mm | +0.68 |
+| 2.23 | 1.83 | 115 V | 1.0 mm | +0.83 |
+| 3.43 | 2.63 | 230 V — `P1` L↔N | 1.5 mm | +1.13 |
+| 3.18 | 3.18 | 230 V — `C5_1`↔`C5_2` | 1.5 mm | +1.68 |
+
+Worst margin on the mains side is +0.68 mm. Nothing in the 47 kΩ block
+needs to move.
+
+The 3.43 mm at `P1` is set by the terminal block's 5.08 mm pitch, not by
+anything you drew, and the block carries its own 300 V rating — so it is
+covered by the component's approval. Two consequences: do not treat 3.4 mm
+as a precedent for shrinking anything else, and inspect those two pins after
+hand soldering, because that gap is the one place where a solder bridge is a
+dead short across 230 V.
+
+## Mains copper to board edge: 2.89 mm
+
+Board outline is 75 × 75 mm, X 25.50–100.50, Y 25.50–100.50, with 2 mm
+chamfered corners.
+
+| distance to edge | net | what |
+|---|---|---|
+| 2.89 mm | `NetC5_2` | `P1` pad, X 96.8 / Y 95.7 |
+| 2.96 mm | `NetC5_2` | track, X 96.8 / Y 93.4 |
+| 3.35 mm | `NetC5_2` | `C5` pad, X 96.3 / Y 78.3 |
+| 3.93 mm | `NetF1_1` | `P1` pad, X 91.7 / Y 95.7 |
+
+Fine for the fab, which needs 0.3 mm. The point to absorb is that the whole
+right-hand edge of the board — X 95–100 from Y 66 to Y 96 — is live.
+
+- The enclosure wall is the insulation on that side, not your copper.
+- No mounting screw, screw boss or cable entry on that edge.
+- The board has to be held so it cannot slide into the wall.
+- In a metal panel, that edge is 2.9 mm plus the wall thickness away from
+  grounded steel.
+
+## No mains copper overlaps low-voltage copper through the board
+
+Checked every mains object against every low-voltage object on the opposite
+layer: **zero overlap**, total area 0.00 mm². Correct as it stands, and it
+means air and surface are the only insulation the numbers above have to
+cover.
+
+Protect this when you pour. A pour's default behaviour is to fill
+everywhere, including under `T1`, under the HLK's AC half, and across the
+barrier. Draw each pour's outline so it stops at the barrier rather than
+letting the clearance rule carve it back — a clipped pour leaves slivers, a
+pour drawn to the right shape does not.
+
+## Mounting: two holes, diagonally opposite, 68 mm from the terminal block
+
+Holes with no net: 2.2 mm at X 28.0 / Y 98.0 and X 97.5 / Y 28.0. That is
+all of them.
+
+`P1` sits at X 91.7–96.8 / Y 95.7 with no support within 68 mm. Torquing
+4 mm² house wire into that terminal flexes the board, which cracks
+through-hole joints and works the mains traces. Over 1,000 units it returns
+as field failures that look random.
+
+A screw hole there is not available — the corner is solid mains copper, and
+the opposite free corner at X 28 / Y 28 is `U1` pin 1. Solve it in the
+enclosure:
+
+- Support boss under about X 93 / Y 93, directly beneath the terminal block.
+  No screw, no hole, no clearance question: plastic against mains copper on
+  the bottom layer is harmless inside a Class II box.
+- Second boss at about X 45 / Y 30 for the opposite diagonal. **Not** at
+  X 30 / Y 32 — that is inside the antenna zone, where plastic detunes the
+  antenna as much as copper does.
+
+## The rule set, in the order it has to be in
+
+Altium applies the **first** matching rule. A MAINS ↔ All rule also matches
+MAINS ↔ MAINS, which is what froze routing when the barrier rule sat on top.
+
+| Priority | Name | Scope 1 | Scope 2 | Gap |
+|---|---|---|---|---|
+| 1 | `Full_Mains` | class `FULL_MAINS` | class `FULL_MAINS` | 3.0 mm |
+| 2 | `Divider_Taps` | class `MAINS` | class `MAINS` | 1.5 mm |
+| 3 | `Mains_to_World` | class `MAINS` | All | 6.5 mm |
+| 4 | `Clearance` | All | All | 0.254 mm |
+
+- `FULL_MAINS` = `NetF1_1`, `NetC5_1`, `NetC5_2` — the three nets actually at
+  230 V.
+- `MAINS` = those three plus `NetR5_1`, `NetR8_1`, `NetR10_1`, `NetR13_1`.
+
+Anything rule 3 reports between 6.5 and 7.5 mm, inspect by hand: if both
+sides are through-hole pads, add 0.8 mm before calling it passed.
+
+## A slot will not fix the `J1` gap
+
+Milling a slot through a barrier lengthens the **creepage** path — the
+distance along the surface. **Clearance** is the straight line through air,
+and a slot does not change it. The binding requirement here is clearance
+(5.5 mm), not creepage (5.0 mm), so a slot buys nothing. Moving the
+connector is the only fix.
+
+Where a slot earns its keep is if the panel turns out dusty or humid enough
+to push the design from pollution degree 2 to 3, when creepage becomes the
+constraint. Cheaper insurance for that is conformal coating over the mains
+zone, worth doing at 1,000 units for dust and condensation alone. It is not
+a licence to shrink a gap — that needs a type test.
+
+## Zone geometry
+
+| | X | Y | copper area |
+|---|---|---|---|
+| mains | 59.7–97.6 | 65.5–96.6 | 266 mm² |
+| low voltage | 26.3–97.7 | 27.0–99.6 | 602 mm² |
+
+Board area 5,617 mm². The mains zone is a clean block in the top right; the
+barrier is a straight line along X ≈ 59.7 and Y ≈ 65.5 everywhere except
+where it jogs around `T1`, which is where its narrowest point is.

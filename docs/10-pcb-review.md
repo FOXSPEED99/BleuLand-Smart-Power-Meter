@@ -673,3 +673,68 @@ rule is a single decision made once. One error in `Clearance` or
 `Un-Routed Net` is a board that does not work, or one that hurts someone.
 Run DRC at the end of every session — not for the silkscreen, but so the day
 a `Clearance` error appears you see it that day.
+
+---
+
+# The actual design rule set in the file
+
+Read from the `Rules6` stream. 35 rules, all `ENABLED=TRUE`. Rules do not
+change when silkscreen moves, so this section stays current through overlay
+edits.
+
+## The clearance rule is still wide open
+
+```
+Clearance    enabled=TRUE   priority 1   All / All   GAP = 10mil
+```
+
+**That is the only clearance rule in the file.** No net classes, no mains
+rule. The 6.5 mm barrier is checked by nothing — Altium considers 0.254 mm
+acceptable between the fused live net and the clamp connector.
+
+This is why a DRC run returns silkscreen errors and zero clearance errors.
+The copper is not being asked about. Creating the four rules in the table
+above is the highest-value change available in that dialog.
+
+## Settings worth knowing
+
+| Rule | Value | Note |
+|---|---|---|
+| `SolderMaskExpansion` | 4 mil | confirms the 0.1016 mm/side used in every mask measurement here |
+| `SilkToSolderMaskClearance` | 10 mil, scope `IsPad / All`, `CLEARANCETOEXPOSEDCOPPER=TRUE` | checks **text** against pads as well as lines and arcs |
+| `MinimumSolderMaskSliver` | 10 mil | enabled; measured zero violations |
+| `HoleToHoleClearance` | 10 mil | enabled; nothing below 0.4 mm |
+| `HoleSize` | min 20 %, **max 80 %** of pad | this is what flags `J1`'s 1.10 mm hole in a 1.10 mm pad at 100 % |
+| `Width` | min 0.4 mm, max 2.0 mm | current tracks are 0.6 and 1.5 mm |
+| `RoutingVias` | hole 28 mil (0.711 mm), pad 50 mil (1.27 mm) | too large — see below |
+| `UnRoutedNet` | enabled | see below |
+| `UnpouredPolygon` | enabled | will catch a pour left unpoured after an edit |
+| `NetAntennae` | enabled | catches dangling track stubs |
+
+## Two corrections to the earlier DRC section
+
+- **`Un-Routed Net` is enabled**, not unticked. Whether it was *selected for
+  the batch run* is stored in `Design Rule Checker Options6`, which is 0 bytes
+  in this file because it was saved before DRC was first run. The check to
+  make is simply whether `C7` appeared in the error list.
+- **There is no `Minimum Annular Ring` rule in this rule set.** The rule that
+  catches `J1` is `HoleSize`, whose `MAXPERCENT` of 80 % is exceeded by a
+  1.10 mm hole in a 1.10 mm pad.
+
+## Change the via size before placing any
+
+`RoutingVias` at a 0.711 mm hole and 1.27 mm pad is far larger than this board
+needs. Stitching vias at that size will eat into clearances and inflate drill
+cost. Set **0.3 mm hole / 0.6 mm pad** before placing stitching vias with the
+ground pours; JLCPCB's base specification handles 0.3 mm.
+
+## What silkscreen edits do and do not invalidate
+
+Unaffected, because silk is not copper: the barrier figures, every mains gap,
+the 2.89 mm to the board edge, the zero cross-layer overlap, the zero mask
+slivers, the annular rings, the surge arithmetic, and `C7` being unrouted.
+
+Stale: the silk-to-mask tables above. And one gap to note — those tables
+measured silk **lines and arcs only, not designator text**. The rule checks
+text too, so designator positions are very likely a share of the error count,
+and they are not covered by the numbers above.

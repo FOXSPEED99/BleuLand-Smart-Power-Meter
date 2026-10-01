@@ -470,3 +470,104 @@ a licence to shrink a gap — that needs a type test.
 Board area 5,617 mm². The mains zone is a clean block in the top right; the
 barrier is a straight line along X ≈ 59.7 and Y ≈ 65.5 everywhere except
 where it jogs around `T1`, which is where its narrowest point is.
+
+---
+
+# Does the mains need top-layer tracks as well as bottom?
+
+No. Bottom only. If you want more margin, buy it with 2 oz copper, not with a
+second layer of tracks.
+
+## What flows in the mains copper
+
+All seven mains nets are 1.5 mm wide, all on the bottom layer, 167 mm of
+track in total.
+
+| Source | Current |
+|---|---|
+| HLK-5M05 input, 5 W out at ~72 % efficiency | 30.2 mA |
+| `C5`, 0.1 µF X2 across L–N at 50 Hz | 7.2 mA |
+| 47 kΩ divider chain, 188 kΩ total | 1.2 mA |
+| `R4` MOV leakage | ~0.01 mA |
+| worst case, simply added | **38.7 mA** |
+
+A 1.5 mm track in 1 oz copper is 1.5 × 0.035 = **0.0525 mm²**, rated roughly
+1.5–2 A for a 10 °C rise. That is **2.6 % utilisation**.
+
+**No load current ever passes through this board.** The CT clamps around the
+house cable externally and `P1` has exactly two pins — live-in and neutral —
+with no pass-through. The 63 A figure describes the cable the clamp goes
+around, not the copper. It never becomes a trace-width requirement.
+
+DC resistance of the longest mains net, `NetC5_2` at 65.7 mm: 21.5 mΩ,
+dropping 0.86 mV at 40 mA.
+
+## The only event that stresses the copper
+
+`R4` (14D471K) conducting a surge, along
+`P1` → `F1` → `NetC5_1` → `R4` → `NetC5_2` → `P1`. For overvoltage category
+III the design surge is the 4 kV / 2 Ω combination wave; with the MOV
+clamping near 700 V that is about **1.6 kA for 8/20 µs**.
+
+20 µs is adiabatic — all the I²R energy stays in the copper. The rise is
+independent of track length, because resistance and heat capacity both scale
+with length:
+
+| Surge | 1 oz (35 µm) | 2 oz (70 µm) |
+|---|---|---|
+| 1.6 kA — cat III design level | **+93 °C** | +23 °C |
+| 3 kA | +326 °C | +81 °C |
+| 6 kA — the MOV's single-pulse rating | +1303 °C | +326 °C |
+
+Temperature rise goes as **1/A²**: halve the copper area and the rise
+quadruples. FR-4 resin starts degrading above roughly 250–300 °C.
+
+## Why a parallel top track is the wrong fix
+
+A parallel track doubles the area and cuts the rise 4×, the same as 2 oz
+copper. The problem is the joint.
+
+A 0.4 mm finished via with 25 µm plating has a barrel wall cross-section of
+π × 0.4 × 0.025 = **0.0314 mm²** — 60 % of the 1.5 mm track, in a tube
+surrounded by FR-4 with nowhere for heat to go. Same adiabatic sum on the
+barrel:
+
+| Surge | one via |
+|---|---|
+| 1.6 kA | **+259 °C** |
+| 3 kA | +912 °C |
+
+The via runs nearly three times hotter than the track it was meant to
+reinforce. Matching the track would take three or four vias per transition,
+and each one widens the mains copper where it sits — straight into the
+6.5 mm barrier.
+
+Beyond the thermal point, putting mains on two layers means:
+
+- Every clearance check doubles. Today the barrier is a bottom-layer problem
+  and the top layer carries mains **pads only**. That simplification is worth
+  keeping.
+- Top-layer mains tracks run between through-hole pads whose solder fillets
+  are growing — the layer where the 0.8 mm goes.
+- Exposed mains copper area doubles, the wrong direction for creepage and for
+  dust or condensation bridging.
+
+## Do this instead
+
+**Order the board in 2 oz (70 µm) copper.** Same 4× surge improvement as
+parallel copper, on every mains trace at once, with no layout work, no extra
+vias and no effect on clearances.
+
+It is safe for this board: 2 oz typically needs ≥0.2 mm minimum trace and
+gap rather than 0.127 mm, and the narrowest track anywhere here is 0.6 mm
+with a 0.254 mm default gap. `U2` is 1.27 mm pitch, far too coarse to care
+about the extra etch taper.
+
+Two related calls:
+
+- **No pour on the mains side.** The only gain would be slight EMI shielding
+  for the HLK, which is a certified module that filters its own input. The
+  cost is a much longer barrier perimeter and far more mains copper for dust
+  to bridge.
+- **Keep the top layer empty inside the mains zone.** That emptiness is what
+  makes the barrier a single-layer problem.
